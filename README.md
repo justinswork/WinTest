@@ -15,6 +15,22 @@ AI-powered desktop UI element detection using [InternVL2-8B](https://huggingface
 
 ---
 
+## Vision
+
+The goal is to build a complete **AI-powered desktop UI testing tool**. The end state:
+
+- **Define test tasks** in simple YAML files — no code required
+- **Point it at any desktop application** — the tool launches the app and runs your tests
+- **AI agent executes autonomously** — takes screenshots, finds UI elements, clicks, types, scrolls, and verifies results
+- **Get a pass/fail report** — with annotated screenshots showing exactly what the agent saw and did at each step
+- **Easy-to-use interface** — CLI for developers, web UI for everyone else
+
+Think of it as Selenium/Playwright, but for **any desktop application**, powered by visual AI instead of DOM selectors.
+
+See [ROADMAP.md](ROADMAP.md) for the detailed implementation plan.
+
+---
+
 ## Hardware Requirements
 
 | Component | Minimum | Recommended |
@@ -81,6 +97,21 @@ DesktopUITesting/
   requirements.txt    # Python dependencies
   README.md
 ```
+
+---
+
+## Roadmap
+
+| Phase | Name | Description | Status |
+|-------|------|-------------|--------|
+| 1 | Core Engine | Refactor into package, reliable coordinate parsing, click/type actions | Not started |
+| 2 | Agent Loop | Screenshot-analyze-act-verify loop, YAML task definitions | Not started |
+| 3 | Reporting | HTML/JSON reports with annotated screenshots, timing data | Not started |
+| 4 | App Management | Application lifecycle, error recovery, configuration | Not started |
+| 5 | CLI | `duit run task.yaml`, `duit interactive`, validation | Not started |
+| 6 | Web UI | Visual task editor, live execution viewer, test suites | Not started |
+
+See [ROADMAP.md](ROADMAP.md) for full details on each phase.
 
 ---
 
