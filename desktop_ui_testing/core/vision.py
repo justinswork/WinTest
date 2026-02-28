@@ -93,8 +93,9 @@ class VisionModel:
 
         question = (
             f"<image>\n"
-            f"Please provide the bounding box center coordinates of the "
-            f"'{element_name}' as [x, y] on a 0-1000 scale."
+            f"Find the '{element_name}' in this screenshot. "
+            f"Respond with ONLY the center coordinates as [x, y] on a 0-1000 scale. "
+            f"Do not explain, just output the coordinates."
         )
 
         with torch.no_grad():
@@ -102,7 +103,7 @@ class VisionModel:
                 self.tokenizer,
                 pixel_values,
                 question,
-                generation_config=dict(max_new_tokens=100),
+                generation_config=dict(max_new_tokens=200),
                 history=None,
             )
 

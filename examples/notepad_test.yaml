@@ -1,0 +1,24 @@
+name: "Notepad Basic Test"
+
+application:
+  path: "notepad.exe"
+  title: "Notepad"
+  wait_after_launch: 3
+
+steps:
+  - action: click
+    target: "text editing area"
+    description: "Click the text area"
+
+  - action: type
+    text: "Hello, World!"
+    description: "Type test text"
+
+  - action: verify
+    target: "text containing 'Hello, World!'"
+    description: "Verify text was typed"
+
+settings:
+  retry_attempts: 3
+  retry_delay: 2
+  fail_fast: true

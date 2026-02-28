@@ -1,10 +1,14 @@
+import sys
 import torch
 from desktop_ui_testing.core.vision import VisionModel
 from desktop_ui_testing.core.screen import ScreenCapture
 from desktop_ui_testing.core.actions import ActionExecutor
+from desktop_ui_testing.core.agent import Agent
+from desktop_ui_testing.tasks.loader import load_task
+from desktop_ui_testing.tasks.runner import TaskRunner
 
 if __name__ == "__main__":
-    # --- Load ---
+    # --- Load model ---
     vision = VisionModel()
     vision.load()
 
@@ -18,7 +22,19 @@ if __name__ == "__main__":
     else:
         print("GPU Name: None")
 
-    # --- Demo: Find a UI element ---
+    # --- Task mode: run a YAML task file ---
+    if len(sys.argv) > 1:
+        task_file = sys.argv[1]
+        print(f"\nLoading task: {task_file}")
+        task = load_task(task_file)
+
+        agent = Agent(vision, screen, actions)
+        runner = TaskRunner(agent)
+        result = runner.run(task)
+
+        sys.exit(0 if result.passed else 1)
+
+    # --- Demo mode: find a single element ---
     target = "Windows Start button"
     print(f"\nScanning screen for: '{target}'...")
 
@@ -33,8 +49,6 @@ if __name__ == "__main__":
         x_norm, y_norm = result["coordinates"]
         px, py = screen.normalized_to_pixel(x_norm, y_norm)
         print(f"PARSED COORDS: [{x_norm}, {y_norm}] -> pixel ({px}, {py})")
-        # Uncomment the next line to actually click the element:
-        # actions.click(px, py)
     else:
         print("Could not parse coordinates from response.")
     print("-" * 30)
