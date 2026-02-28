@@ -1,64 +1,116 @@
+import logging
 import os
 import re
-import subprocess
 import time
-import ctypes
-import ctypes.wintypes
 from datetime import datetime
+from typing import Optional
 
-from .schema import TaskDefinition, TaskResult
+from .schema import TaskDefinition, TaskResult, StepResult
 from ..core.agent import Agent
+from ..core.app_manager import ApplicationManager, AppConfig
+from ..core.recovery import RecoveryStrategy
+from ..config.settings import Settings
 from ..reporting.reporter import ReportGenerator
+
+logger = logging.getLogger(__name__)
 
 
 class TaskRunner:
     """Runs a complete task definition through the agent."""
 
-    def __init__(self, agent: Agent):
+    def __init__(self, agent: Agent, settings: Settings = None):
         self.agent = agent
-        self._app_title = None
+        self.settings = settings or Settings()
+        self._app_manager: Optional[ApplicationManager] = None
+        self._recovery: Optional[RecoveryStrategy] = None
 
     def run(self, task: TaskDefinition) -> TaskResult:
         """Execute all steps in a task definition."""
-        # Create timestamped report directory
+        effective = self.settings.merge_task_settings(task.settings)
+
         report_dir = self._create_report_dir(task.name)
         self.agent.report_dir = report_dir
 
-        print(f"\n{'=' * 40}")
-        print(f"TASK: {task.name}")
-        print(f"STEPS: {len(task.steps)}")
-        print(f"{'=' * 40}\n")
+        logger.info("=" * 40)
+        logger.info("TASK: %s", task.name)
+        logger.info("STEPS: %d", len(task.steps))
+        logger.info("=" * 40)
 
+        # Set up application manager and recovery
         if task.application:
-            self._launch_application(task.application)
-            self._app_title = task.application.get("title")
+            app_config = AppConfig(
+                path=task.application["path"],
+                title=task.application.get("title"),
+                wait_after_launch=task.application.get(
+                    "wait_after_launch", effective.app.wait_after_launch
+                ),
+            )
+            self._app_manager = ApplicationManager(
+                config=app_config,
+                graceful_close_timeout=effective.app.graceful_close_timeout,
+                focus_delay=effective.app.focus_delay,
+            )
+            self._app_manager.launch()
+
+            if effective.recovery.enabled:
+                self._recovery = RecoveryStrategy(
+                    app_manager=self._app_manager,
+                    actions=self.agent.actions,
+                    max_attempts=effective.recovery.max_recovery_attempts,
+                    dismiss_keys=effective.recovery.dismiss_dialog_keys,
+                    recovery_delay=effective.recovery.recovery_delay,
+                )
 
         fail_fast = task.settings.get("fail_fast", True)
+        task_deadline = time.time() + effective.timeout.task_timeout
         results = []
 
         for i, step in enumerate(task.steps, 1):
-            if self._app_title:
-                self._focus_window(self._app_title)
-                time.sleep(0.3)
+            # Task-level timeout check
+            if time.time() > task_deadline:
+                logger.error(
+                    "Task timeout (%.0fs) exceeded.", effective.timeout.task_timeout
+                )
+                results.append(StepResult(
+                    step=step,
+                    passed=False,
+                    error=f"Task timeout ({effective.timeout.task_timeout}s) exceeded",
+                ))
+                break
+
+            # Focus the app before each step
+            if self._app_manager:
+                self._app_manager.focus()
 
             label = step.description or step.action.value
-            print(f"[Step {i}/{len(task.steps)}] {label}...")
+            logger.info("[Step %d/%d] %s...", i, len(task.steps), label)
 
-            result = self.agent.execute_step(step)
+            step_timeout = step.timeout or effective.timeout.step_timeout
+            result = self.agent.execute_step(step, step_timeout=step_timeout)
+
+            # Attempt recovery on failure
+            if not result.passed and self._recovery:
+                logger.warning("Step failed, attempting recovery...")
+                if self._recovery.attempt_recovery():
+                    logger.info("Recovery succeeded, retrying step...")
+                    result = self.agent.execute_step(
+                        step, step_timeout=step_timeout
+                    )
+
             results.append(result)
 
             status = "PASS" if result.passed else "FAIL"
-            print(f"  -> {status} ({result.duration_seconds:.1f}s)")
+            logger.info("  -> %s (%.1fs)", status, result.duration_seconds)
 
             if result.coordinates:
-                print(f"     Clicked at: {result.coordinates}")
+                logger.info("     Clicked at: %s", result.coordinates)
             if result.error:
-                print(f"     Error: {result.error}")
+                logger.error("     Error: %s", result.error)
             if result.model_response and not result.passed:
-                print(f"     Model said: {result.model_response}")
+                logger.debug("     Model said: %s", result.model_response)
 
             if not result.passed and fail_fast:
-                print("\n  Fail-fast enabled, stopping execution.")
+                logger.info("Fail-fast enabled, stopping execution.")
                 break
 
         task_result = TaskResult(task_name=task.name, step_results=results)
@@ -67,10 +119,10 @@ class TaskRunner:
         # Generate reports
         reporter = ReportGenerator(report_dir)
         html_path = reporter.generate(task_result)
-        print(f"\nReport: {html_path}")
+        logger.info("Report: %s", html_path)
 
-        if task.application:
-            self._close_application(task.application)
+        if self._app_manager:
+            self._app_manager.close()
 
         return task_result
 
@@ -83,92 +135,15 @@ class TaskRunner:
         os.makedirs(report_dir, exist_ok=True)
         return report_dir
 
-    def _launch_application(self, app_config: dict):
-        """Close any existing instances and launch the application fresh."""
-        title = app_config.get("title")
-        path = app_config["path"]
-
-        # Kill existing instances for a clean state
-        if title and self._find_window(title):
-            exe_name = path.split("/")[-1].split("\\")[-1]
-            print(f"Closing existing '{title}' windows...")
-            import os
-            os.system(f'taskkill /IM {exe_name} /F >nul 2>&1')
-            time.sleep(1)
-
-        wait = app_config.get("wait_after_launch", 3)
-        print(f"Launching: {path}")
-        subprocess.Popen(path, shell=True)
-        print(f"Waiting {wait}s for application to start...")
-        time.sleep(wait)
-
-    @staticmethod
-    def _close_application(app_config: dict):
-        """Close the application after the test run."""
-        exe_name = app_config["path"].split("/")[-1].split("\\")[-1]
-        print(f"\nClosing: {exe_name}")
-        import os
-        os.system(f'taskkill /IM {exe_name} /F >nul 2>&1')
-
-    @staticmethod
-    def _find_window(title_substring: str) -> bool:
-        """Check if a window matching the title exists."""
-        user32 = ctypes.windll.user32
-        found = [False]
-
-        EnumWindowsProc = ctypes.WINFUNCTYPE(
-            ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM
-        )
-
-        def callback(hwnd, _lparam):
-            if not user32.IsWindowVisible(hwnd):
-                return True
-            length = user32.GetWindowTextLengthW(hwnd)
-            if length > 0:
-                buf = ctypes.create_unicode_buffer(length + 1)
-                user32.GetWindowTextW(hwnd, buf, length + 1)
-                if title_substring.lower() in buf.value.lower():
-                    found[0] = True
-                    return False
-            return True
-
-        user32.EnumWindows(EnumWindowsProc(callback), 0)
-        return found[0]
-
-    @staticmethod
-    def _focus_window(title_substring: str):
-        """Bring a window containing title_substring to the foreground and maximize it."""
-        user32 = ctypes.windll.user32
-        SW_SHOWMAXIMIZED = 3
-
-        EnumWindowsProc = ctypes.WINFUNCTYPE(
-            ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM
-        )
-
-        def callback(hwnd, _lparam):
-            if not user32.IsWindowVisible(hwnd):
-                return True
-            length = user32.GetWindowTextLengthW(hwnd)
-            if length > 0:
-                buf = ctypes.create_unicode_buffer(length + 1)
-                user32.GetWindowTextW(hwnd, buf, length + 1)
-                if title_substring.lower() in buf.value.lower():
-                    user32.ShowWindow(hwnd, SW_SHOWMAXIMIZED)
-                    user32.SetForegroundWindow(hwnd)
-                    return False
-            return True
-
-        user32.EnumWindows(EnumWindowsProc(callback), 0)
-
     @staticmethod
     def _print_summary(result: TaskResult):
         """Print a summary of the task results."""
         summary = result.summary
         status = "PASSED" if result.passed else "FAILED"
-        print(f"\n{'=' * 40}")
-        print(f"RESULT: {status}")
-        print(
-            f"  {summary['passed']}/{summary['total']} steps passed, "
-            f"{summary['failed']} failed"
+        logger.info("=" * 40)
+        logger.info("RESULT: %s", status)
+        logger.info(
+            "  %d/%d steps passed, %d failed",
+            summary["passed"], summary["total"], summary["failed"],
         )
-        print(f"{'=' * 40}")
+        logger.info("=" * 40)

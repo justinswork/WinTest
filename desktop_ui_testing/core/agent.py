@@ -1,4 +1,6 @@
+import logging
 import os
+import threading
 import time
 
 from PIL import ImageDraw
@@ -7,6 +9,8 @@ from ..tasks.schema import Step, StepResult, ActionType
 from .vision import VisionModel
 from .screen import ScreenCapture
 from .actions import ActionExecutor
+
+logger = logging.getLogger(__name__)
 
 
 class Agent:
@@ -30,14 +34,38 @@ class Agent:
         self.report_dir = report_dir
         self._step_counter = 0
 
-    def execute_step(self, step: Step) -> StepResult:
-        """Execute a single test step and return the result."""
+    def execute_step(self, step: Step, step_timeout: float = 60.0) -> StepResult:
+        """Execute a single test step with timeout enforcement."""
         self._step_counter += 1
         start = time.time()
-        try:
-            result = self._dispatch(step)
-        except Exception as e:
-            result = StepResult(step=step, passed=False, error=str(e))
+
+        result_box = [None]
+        error_box = [None]
+
+        def _run():
+            try:
+                result_box[0] = self._dispatch(step)
+            except Exception as e:
+                error_box[0] = e
+
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
+        thread.join(timeout=step_timeout)
+
+        if thread.is_alive():
+            logger.error("Step timed out after %.1fs", step_timeout)
+            result = StepResult(
+                step=step,
+                passed=False,
+                error=f"Step timed out after {step_timeout:.1f}s",
+            )
+        elif error_box[0] is not None:
+            result = StepResult(
+                step=step, passed=False, error=str(error_box[0])
+            )
+        else:
+            result = result_box[0]
+
         result.duration_seconds = time.time() - start
         return result
 
@@ -106,9 +134,10 @@ class Agent:
                 )
 
             if attempt < step.retry_attempts - 1:
-                print(
-                    f"  Retry {attempt + 1}/{step.retry_attempts}: "
-                    f"'{step.target}' not found, waiting {step.retry_delay}s..."
+                logger.info(
+                    "  Retry %d/%d: '%s' not found, waiting %.1fs...",
+                    attempt + 1, step.retry_attempts,
+                    step.target, step.retry_delay,
                 )
                 time.sleep(step.retry_delay)
 
@@ -145,9 +174,9 @@ class Agent:
                 )
 
             if attempt < step.retry_attempts - 1:
-                print(
-                    f"  Retry {attempt + 1}/{step.retry_attempts}: "
-                    f"verification pending, waiting {step.retry_delay}s..."
+                logger.info(
+                    "  Retry %d/%d: verification pending, waiting %.1fs...",
+                    attempt + 1, step.retry_attempts, step.retry_delay,
                 )
                 time.sleep(step.retry_delay)
 

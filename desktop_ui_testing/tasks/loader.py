@@ -2,8 +2,13 @@ import yaml
 from .schema import TaskDefinition, Step, ActionType
 
 
-def load_task(filepath: str) -> TaskDefinition:
-    """Load a task definition from a YAML file."""
+def load_task(filepath: str, settings=None) -> TaskDefinition:
+    """Load a task definition from a YAML file.
+
+    Args:
+        filepath: Path to the YAML task file.
+        settings: Optional Settings instance for resolving defaults.
+    """
     with open(filepath, "r") as f:
         data = yaml.safe_load(f)
 
@@ -12,9 +17,16 @@ def load_task(filepath: str) -> TaskDefinition:
     if "steps" not in data or not data["steps"]:
         raise ValueError(f"Task file {filepath} missing or empty 'steps' field")
 
-    settings = data.get("settings", {})
-    default_retries = settings.get("retry_attempts", 3)
-    default_retry_delay = settings.get("retry_delay", 2.0)
+    task_settings = data.get("settings", {})
+
+    # Resolve retry defaults from Settings cascade or task YAML
+    if settings:
+        effective = settings.merge_task_settings(task_settings)
+        default_retries = effective.retry.retry_attempts
+        default_retry_delay = effective.retry.retry_delay
+    else:
+        default_retries = task_settings.get("retry_attempts", 3)
+        default_retry_delay = task_settings.get("retry_delay", 2.0)
 
     steps = []
     for i, step_data in enumerate(data["steps"]):
@@ -42,11 +54,12 @@ def load_task(filepath: str) -> TaskDefinition:
             expected=step_data.get("expected", True),
             retry_attempts=step_data.get("retry_attempts", default_retries),
             retry_delay=step_data.get("retry_delay", default_retry_delay),
+            timeout=step_data.get("timeout"),
         ))
 
     return TaskDefinition(
         name=data["name"],
         steps=steps,
         application=data.get("application"),
-        settings=settings,
+        settings=task_settings,
     )

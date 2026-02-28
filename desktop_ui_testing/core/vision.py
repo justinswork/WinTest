@@ -1,3 +1,4 @@
+import logging
 import re
 import torch
 from PIL import Image
@@ -5,12 +6,18 @@ from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig, Generatio
 import torchvision.transforms as T
 from torchvision.transforms.functional import InterpolationMode
 
+logger = logging.getLogger(__name__)
+
 
 class VisionModel:
     """Manages InternVL2-8B loading, inference, and coordinate extraction."""
 
-    def __init__(self, model_path="OpenGVLab/InternVL2-8B"):
-        self.model_path = model_path
+    def __init__(self, model_settings=None):
+        if model_settings is None:
+            from ..config.settings import ModelSettings
+            model_settings = ModelSettings()
+        self.settings = model_settings
+        self.model_path = model_settings.model_path
         self.model = None
         self.tokenizer = None
         self._loaded = False
@@ -20,13 +27,13 @@ class VisionModel:
         if self._loaded:
             return
 
-        print("Loading AI Brain (this may take a minute)...")
+        logger.info("Loading AI Brain (this may take a minute)...")
 
         quant_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
+            load_in_4bit=self.settings.load_in_4bit,
+            bnb_4bit_compute_dtype=getattr(torch, self.settings.bnb_4bit_compute_dtype),
+            bnb_4bit_quant_type=self.settings.bnb_4bit_quant_type,
+            bnb_4bit_use_double_quant=self.settings.bnb_4bit_use_double_quant,
         )
 
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -41,7 +48,7 @@ class VisionModel:
 
         self._apply_patches()
         self._loaded = True
-        print("Model loaded successfully.")
+        logger.info("Model loaded successfully.")
 
     def _apply_patches(self):
         """Apply transformers >=4.50 compatibility patches for InternLM2."""
@@ -89,7 +96,7 @@ class VisionModel:
         if not self._loaded:
             raise RuntimeError("Model not loaded. Call load() first.")
 
-        pixel_values = self._preprocess(screenshot)
+        pixel_values = self._preprocess(screenshot, self.settings.input_size)
 
         question = (
             f"<image>\n"
@@ -103,7 +110,7 @@ class VisionModel:
                 self.tokenizer,
                 pixel_values,
                 question,
-                generation_config=dict(max_new_tokens=200),
+                generation_config=dict(max_new_tokens=self.settings.max_new_tokens),
                 history=None,
             )
 

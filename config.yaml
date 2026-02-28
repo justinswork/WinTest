@@ -1,0 +1,27 @@
+# DesktopUITesting — Global Configuration
+# Values here override built-in defaults.
+# Task YAML settings override these.
+
+model:
+  model_path: "OpenGVLab/InternVL2-8B"
+  max_new_tokens: 200
+
+action:
+  action_delay: 0.5
+  failsafe: true
+
+retry:
+  retry_attempts: 3
+  retry_delay: 2.0
+
+timeout:
+  step_timeout: 60.0     # Max seconds for a single step
+  task_timeout: 600.0     # Max seconds for an entire task
+
+recovery:
+  enabled: true
+  max_recovery_attempts: 2
+  dismiss_dialog_keys: ["escape"]
+
+logging:
+  level: INFO

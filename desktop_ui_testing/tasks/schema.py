@@ -28,6 +28,7 @@ class Step:
     expected: bool = True
     retry_attempts: int = 3
     retry_delay: float = 2.0
+    timeout: Optional[float] = None
 
 
 @dataclass
