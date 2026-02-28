@@ -208,3 +208,7 @@ __marimo__/
 
 # Test reports
 reports/
+
+# Frontend build artifacts
+node_modules/
+wintest/ui/web/frontend/dist/

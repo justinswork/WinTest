@@ -212,3 +212,16 @@ def interactive(ctx):
     settings = ctx.obj["settings"]
     from .interactive import run_interactive
     run_interactive(settings)
+
+
+# -- wintest web ----------------------------------------------------
+
+@cli.command()
+@click.option("--host", default="127.0.0.1", help="Host to bind to.")
+@click.option("--port", default=8080, type=int, help="Port to listen on.")
+@click.pass_context
+def web(ctx, host, port):
+    """Launch the web UI."""
+    settings = ctx.obj["settings"]
+    from .web.server import start_server
+    start_server(settings, host=host, port=port)

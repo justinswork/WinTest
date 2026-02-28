@@ -1,0 +1,88 @@
+"""Pydantic models for the web API."""
+
+from pydantic import BaseModel
+
+
+class StepModel(BaseModel):
+    action: str
+    description: str = ""
+    target: str | None = None
+    text: str | None = None
+    key: str | None = None
+    keys: list[str] | None = None
+    scroll_amount: int = 0
+    wait_seconds: float = 0.0
+    expected: bool = True
+    retry_attempts: int = 3
+    retry_delay: float = 2.0
+    timeout: float | None = None
+
+
+class TaskModel(BaseModel):
+    name: str
+    filename: str | None = None
+    application: dict | None = None
+    steps: list[StepModel]
+    settings: dict = {}
+
+
+class TaskListItem(BaseModel):
+    filename: str
+    name: str
+    step_count: int
+
+
+class RunRequest(BaseModel):
+    task_file: str
+
+
+class RunResponse(BaseModel):
+    run_id: str
+    status: str
+    task_name: str
+    total_steps: int
+
+
+class StepResultModel(BaseModel):
+    step_num: int
+    description: str
+    action: str
+    passed: bool
+    duration_seconds: float
+    error: str | None = None
+    coordinates: list[int] | None = None
+    screenshot_url: str | None = None
+
+
+class RunStatus(BaseModel):
+    run_id: str | None = None
+    status: str  # idle, running, completed, failed
+    task_name: str | None = None
+    current_step: int | None = None
+    total_steps: int | None = None
+    step_results: list[StepResultModel] = []
+
+
+class ModelStatus(BaseModel):
+    status: str  # not_loaded, loading, loaded
+
+
+class ReportSummary(BaseModel):
+    report_id: str
+    task_name: str
+    passed: bool
+    total: int
+    passed_count: int
+    failed_count: int
+    generated_at: str
+
+
+class ValidationResult(BaseModel):
+    valid: bool
+    issues: list[str]
+
+
+class ActionInfo(BaseModel):
+    name: str
+    description: str
+    required_fields: list[str]
