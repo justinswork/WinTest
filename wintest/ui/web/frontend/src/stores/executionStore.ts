@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import i18next from 'i18next';
 import type { StepResultData, WsMessage } from '../api/types';
 import { executionApi } from '../api/client';
 
@@ -79,7 +80,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
       case 'run_failed':
         set({
           status: 'failed',
-          error: msg.error ?? 'Unknown error',
+          error: msg.error ?? i18next.t('errors.unknownError'),
         });
         break;
       case 'model_loading':
@@ -111,8 +112,8 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
         totalSteps: res.total_steps,
       });
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Failed to start run';
-      set({ status: 'failed', error: typeof msg === 'string' ? msg : 'A run is already in progress' });
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? i18next.t('errors.startRunFailed');
+      set({ status: 'failed', error: typeof msg === 'string' ? msg : i18next.t('errors.runInProgress') });
     }
   },
 

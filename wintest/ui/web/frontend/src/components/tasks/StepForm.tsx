@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { Step } from '../../api/types';
 import { ActionPicker } from './ActionPicker';
 
@@ -16,6 +17,8 @@ const NEEDS_SCROLL = ['scroll'];
 const NEEDS_WAIT = ['wait'];
 
 export function StepForm({ step, index, onChange, onDelete }: Props) {
+  const { t } = useTranslation();
+
   const update = (field: string, value: unknown) => {
     onChange(index, { ...step, [field]: value });
   };
@@ -27,18 +30,18 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
         <ActionPicker value={step.action} onChange={v => update('action', v)} />
         <input
           className="input flex-1"
-          placeholder="Description (optional)"
+          placeholder={t('stepForm.descriptionPlaceholder')}
           value={step.description}
           onChange={e => update('description', e.target.value)}
         />
-        <button className="btn btn-danger btn-sm" onClick={() => onDelete(index)}>Delete</button>
+        <button className="btn btn-danger btn-sm" onClick={() => onDelete(index)}>{t('common.delete')}</button>
       </div>
 
       <div className="step-form-fields">
         {NEEDS_TARGET.includes(step.action) && (
           <input
             className="input"
-            placeholder="Target element (e.g. 'File menu')"
+            placeholder={t('stepForm.targetPlaceholder')}
             value={step.target ?? ''}
             onChange={e => update('target', e.target.value || null)}
           />
@@ -46,7 +49,7 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
         {NEEDS_TEXT.includes(step.action) && (
           <input
             className="input"
-            placeholder="Text to type"
+            placeholder={t('stepForm.textPlaceholder')}
             value={step.text ?? ''}
             onChange={e => update('text', e.target.value || null)}
           />
@@ -54,7 +57,7 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
         {NEEDS_KEY.includes(step.action) && (
           <input
             className="input"
-            placeholder="Key (e.g. 'enter', 'tab')"
+            placeholder={t('stepForm.keyPlaceholder')}
             value={step.key ?? ''}
             onChange={e => update('key', e.target.value || null)}
           />
@@ -62,7 +65,7 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
         {NEEDS_KEYS.includes(step.action) && (
           <input
             className="input"
-            placeholder="Keys (e.g. 'ctrl, c')"
+            placeholder={t('stepForm.keysPlaceholder')}
             value={step.keys?.join(', ') ?? ''}
             onChange={e => update('keys', e.target.value.split(',').map(k => k.trim()).filter(Boolean))}
           />
@@ -71,7 +74,7 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
           <input
             className="input"
             type="number"
-            placeholder="Scroll amount (positive=up, negative=down)"
+            placeholder={t('stepForm.scrollPlaceholder')}
             value={step.scroll_amount}
             onChange={e => update('scroll_amount', parseInt(e.target.value) || 0)}
           />
@@ -81,7 +84,7 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
             className="input"
             type="number"
             step="0.5"
-            placeholder="Seconds to wait"
+            placeholder={t('stepForm.waitPlaceholder')}
             value={step.wait_seconds}
             onChange={e => update('wait_seconds', parseFloat(e.target.value) || 0)}
           />

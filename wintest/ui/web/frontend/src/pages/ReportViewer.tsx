@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { reportApi } from '../api/client';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -7,6 +8,7 @@ import { showToast } from '../components/common/Toast';
 import type { ReportData } from '../api/types';
 
 export function ReportViewer() {
+  const { t } = useTranslation();
   const { reportId } = useParams<{ reportId: string }>();
   const navigate = useNavigate();
   const [report, setReport] = useState<ReportData | null>(null);
@@ -19,17 +21,17 @@ export function ReportViewer() {
   }, [reportId]);
 
   const handleDelete = async () => {
-    if (!reportId || !window.confirm('Delete this report? This cannot be undone.')) return;
+    if (!reportId || !window.confirm(t('reports.deleteConfirm'))) return;
     try {
       await reportApi.delete(reportId);
-      showToast('Report deleted');
+      showToast(t('reports.deleted'));
       navigate('/reports');
     } catch {
-      showToast('Failed to delete report', 'error');
+      showToast(t('reports.deleteFailed'), 'error');
     }
   };
 
-  if (!report) return <LoadingSpinner message="Loading report..." />;
+  if (!report) return <LoadingSpinner message={t('reportViewer.loading')} />;
 
   return (
     <div className="report-viewer">
@@ -37,11 +39,11 @@ export function ReportViewer() {
         <h2>{report.task_name}</h2>
         <div className="header-actions">
           <StatusBadge passed={report.passed} />
-          <button className="btn btn-danger btn-sm" onClick={handleDelete}>Delete</button>
+          <button className="btn btn-danger btn-sm" onClick={handleDelete}>{t('common.delete')}</button>
         </div>
       </div>
       <p className="text-muted">
-        {report.summary.passed}/{report.summary.total} passed &middot; Generated {new Date(report.generated_at).toLocaleString()}
+        {t('reports.passedCount', { passed: report.summary.passed, total: report.summary.total })} &middot; {t('reports.generated', { date: new Date(report.generated_at).toLocaleString() })}
       </p>
 
       <div className="report-steps">
@@ -66,15 +68,15 @@ export function ReportViewer() {
 
               {isExpanded && (
                 <div className="step-detail">
-                  <p><strong>Action:</strong> {step.action}</p>
-                  {step.target && <p><strong>Target:</strong> {step.target}</p>}
-                  {step.error && <p className="step-error"><strong>Error:</strong> {step.error}</p>}
-                  {step.coordinates && <p><strong>Coordinates:</strong> [{step.coordinates.join(', ')}]</p>}
-                  {step.model_response && <p><strong>Model response:</strong> {step.model_response}</p>}
+                  <p><strong>{t('reportViewer.action')}</strong> {step.action}</p>
+                  {step.target && <p><strong>{t('reportViewer.target')}</strong> {step.target}</p>}
+                  {step.error && <p className="step-error"><strong>{t('reportViewer.error')}</strong> {step.error}</p>}
+                  {step.coordinates && <p><strong>{t('reportViewer.coordinates')}</strong> [{step.coordinates.join(', ')}]</p>}
+                  {step.model_response && <p><strong>{t('reportViewer.modelResponse')}</strong> {step.model_response}</p>}
                   {screenshotFile && reportId && (
                     <img
                       src={reportApi.screenshotUrl(reportId, screenshotFile)}
-                      alt={`Step ${i + 1} screenshot`}
+                      alt={t('reportViewer.stepScreenshot', { num: i + 1 })}
                       className="screenshot-img"
                     />
                   )}

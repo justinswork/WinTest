@@ -1,9 +1,18 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useExecutionStore } from '../stores/executionStore';
 import { useExecutionWebSocket } from '../api/ws';
 import { StatusBadge } from '../components/common/StatusBadge';
 
+const STATUS_KEYS: Record<string, string> = {
+  idle: 'execution.idle',
+  running: 'execution.running',
+  completed: 'execution.completed',
+  failed: 'execution.failed',
+};
+
 export function ExecutionViewer() {
+  const { t } = useTranslation();
   const store = useExecutionStore();
   const { handleWsMessage, fetchStatus } = store;
 
@@ -20,14 +29,14 @@ export function ExecutionViewer() {
   return (
     <div className="execution-viewer">
       <div className="section-header">
-        <h2>Execution {store.taskName && `- ${store.taskName}`}</h2>
+        <h2>{store.taskName ? t('execution.titleWithTask', { name: store.taskName }) : t('execution.title')}</h2>
         <span className={`execution-status status-${store.status}`}>
-          {store.status.toUpperCase()}
+          {t(STATUS_KEYS[store.status] ?? 'execution.idle')}
         </span>
       </div>
 
       {store.modelStatus === 'loading' && (
-        <div className="info-banner">Loading AI model... This may take a minute.</div>
+        <div className="info-banner">{t('execution.modelLoading')}</div>
       )}
 
       {store.error && (
@@ -36,7 +45,7 @@ export function ExecutionViewer() {
 
       {store.status === 'idle' && !store.runId && (
         <div className="empty-state">
-          <p>No active execution. Go to the Dashboard to run a task.</p>
+          <p>{t('execution.noExecution')}</p>
         </div>
       )}
 
@@ -58,7 +67,7 @@ export function ExecutionViewer() {
             <div className="step-card step-running">
               <span className="step-num">#{store.currentStep}</span>
               <span className="step-label">{store.currentLabel}</span>
-              <span className="step-status">Running...</span>
+              <span className="step-status">{t('execution.stepRunning')}</span>
             </div>
           )}
 
@@ -75,7 +84,7 @@ export function ExecutionViewer() {
               </div>
               {result.error && <p className="step-error">{result.error}</p>}
               {result.coordinates && (
-                <p className="step-coords">Clicked at: [{result.coordinates.join(', ')}]</p>
+                <p className="step-coords">{t('execution.clickedAt', { coords: result.coordinates.join(', ') })}</p>
               )}
             </div>
           ))}
@@ -85,12 +94,12 @@ export function ExecutionViewer() {
           {latestScreenshot ? (
             <img
               src={`data:image/png;base64,${latestScreenshot}`}
-              alt="Latest screenshot"
+              alt={t('execution.screenshotAlt')}
               className="screenshot-img"
             />
           ) : (
             <div className="screenshot-placeholder">
-              <p>Screenshots will appear here during execution</p>
+              <p>{t('execution.screenshotPlaceholder')}</p>
             </div>
           )}
         </div>

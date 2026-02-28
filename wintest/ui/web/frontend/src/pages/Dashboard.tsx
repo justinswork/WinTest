@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTaskStore } from '../stores/taskStore';
 import { useExecutionStore } from '../stores/executionStore';
 import { reportApi } from '../api/client';
@@ -8,6 +9,7 @@ import { showToast } from '../components/common/Toast';
 import type { ReportSummary } from '../api/types';
 
 export function Dashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { tasks, fetchTasks, deleteTask } = useTaskStore();
   const { modelStatus, loadModel, fetchStatus, startRun, status } = useExecutionStore();
@@ -25,12 +27,12 @@ export function Dashboard() {
   };
 
   const handleDeleteTask = async (filename: string, name: string) => {
-    if (!window.confirm(`Delete task "${name}"? This cannot be undone.`)) return;
+    if (!window.confirm(t('dashboard.deleteTaskConfirm', { name }))) return;
     try {
       await deleteTask(filename);
-      showToast('Task deleted');
+      showToast(t('dashboard.taskDeleted'));
     } catch {
-      showToast('Failed to delete task', 'error');
+      showToast(t('dashboard.taskDeleteFailed'), 'error');
     }
   };
 
@@ -38,24 +40,24 @@ export function Dashboard() {
     <div className="dashboard">
       <div className="section">
         <div className="section-header">
-          <h2>Model Status</h2>
+          <h2>{t('dashboard.modelStatus')}</h2>
         </div>
         <div className="model-status-card">
           <span className={`model-indicator model-${modelStatus}`} />
-          <span>{modelStatus === 'loaded' ? 'Model Loaded' : modelStatus === 'loading' ? 'Loading...' : 'Not Loaded'}</span>
+          <span>{modelStatus === 'loaded' ? t('dashboard.modelLoaded') : modelStatus === 'loading' ? t('dashboard.modelLoading') : t('dashboard.modelNotLoaded')}</span>
           {modelStatus === 'not_loaded' && (
-            <button className="btn btn-secondary" onClick={loadModel}>Pre-load Model</button>
+            <button className="btn btn-secondary" onClick={loadModel}>{t('dashboard.preloadModel')}</button>
           )}
         </div>
       </div>
 
       <div className="section">
         <div className="section-header">
-          <h2>Tasks</h2>
-          <button className="btn btn-primary" onClick={() => navigate('/tasks/new')}>New Task</button>
+          <h2>{t('dashboard.tasks')}</h2>
+          <button className="btn btn-primary" onClick={() => navigate('/tasks/new')}>{t('dashboard.newTask')}</button>
         </div>
         {tasks.length === 0 ? (
-          <p className="empty-state">No task files found in examples/</p>
+          <p className="empty-state">{t('dashboard.noTasks')}</p>
         ) : (
           <div className="card-grid">
             {tasks.map(task => (
@@ -64,13 +66,13 @@ export function Dashboard() {
                 <p className="text-muted">{task.filename} &middot; {task.step_count} steps</p>
                 <div className="card-actions">
                   <button className="btn btn-primary" onClick={() => handleRun(task.filename)} disabled={status === 'running'}>
-                    Run
+                    {t('common.run')}
                   </button>
                   <button className="btn btn-secondary" onClick={() => navigate(`/tasks/${task.filename}/edit`)}>
-                    Edit
+                    {t('common.edit')}
                   </button>
                   <button className="btn btn-danger btn-sm" onClick={() => handleDeleteTask(task.filename, task.name)}>
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </div>
               </div>
@@ -81,13 +83,13 @@ export function Dashboard() {
 
       <div className="section">
         <div className="section-header">
-          <h2>Recent Reports</h2>
+          <h2>{t('dashboard.recentReports')}</h2>
           {reports.length > 0 && (
-            <button className="btn btn-secondary" onClick={() => navigate('/reports')}>View All</button>
+            <button className="btn btn-secondary" onClick={() => navigate('/reports')}>{t('dashboard.viewAll')}</button>
           )}
         </div>
         {reports.length === 0 ? (
-          <p className="empty-state">No reports yet. Run a task to generate one.</p>
+          <p className="empty-state">{t('dashboard.noReports')}</p>
         ) : (
           <div className="card-grid">
             {reports.slice(0, 5).map(report => (
@@ -97,7 +99,7 @@ export function Dashboard() {
                   <StatusBadge passed={report.passed} />
                 </div>
                 <p className="text-muted">
-                  {report.passed_count}/{report.total} passed &middot; {new Date(report.generated_at).toLocaleString()}
+                  {t('reports.passedCount', { passed: report.passed_count, total: report.total })} &middot; {new Date(report.generated_at).toLocaleString()}
                 </p>
               </div>
             ))}
