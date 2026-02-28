@@ -51,6 +51,8 @@ def load_task(filepath: str, settings=None) -> TaskDefinition:
             keys=step_data.get("keys"),
             scroll_amount=step_data.get("scroll_amount", 0),
             wait_seconds=step_data.get("wait_seconds", 0.0),
+            app_path=step_data.get("app_path"),
+            app_title=step_data.get("app_title"),
             expected=step_data.get("expected", True),
             retry_attempts=step_data.get("retry_attempts", default_retries),
             retry_delay=step_data.get("retry_delay", default_retry_delay),
@@ -60,6 +62,5 @@ def load_task(filepath: str, settings=None) -> TaskDefinition:
     return TaskDefinition(
         name=data["name"],
         steps=steps,
-        application=data.get("application"),
         settings=task_settings,
     )

@@ -16,12 +16,13 @@ class StepModel(BaseModel):
     retry_attempts: int = 3
     retry_delay: float = 2.0
     timeout: float | None = None
+    app_path: str | None = None
+    app_title: str | None = None
 
 
 class TaskModel(BaseModel):
     name: str
     filename: str | None = None
-    application: dict | None = None
     steps: list[StepModel]
     settings: dict = {}
 

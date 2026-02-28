@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from typing import Optional
 
-from .schema import TaskDefinition, TaskResult, StepResult
+from .schema import TaskDefinition, TaskResult, StepResult, ActionType
 from ..core.agent import Agent
 from ..core.app_manager import ApplicationManager, AppConfig
 from ..core.recovery import RecoveryStrategy
@@ -37,31 +37,6 @@ class TaskRunner:
         logger.info("STEPS: %d", len(task.steps))
         logger.info("=" * 40)
 
-        # Set up application manager and recovery
-        if task.application:
-            app_config = AppConfig(
-                path=task.application["path"],
-                title=task.application.get("title"),
-                wait_after_launch=task.application.get(
-                    "wait_after_launch", effective.app.wait_after_launch
-                ),
-            )
-            self._app_manager = ApplicationManager(
-                config=app_config,
-                graceful_close_timeout=effective.app.graceful_close_timeout,
-                focus_delay=effective.app.focus_delay,
-            )
-            self._app_manager.launch()
-
-            if effective.recovery.enabled:
-                self._recovery = RecoveryStrategy(
-                    app_manager=self._app_manager,
-                    actions=self.agent.actions,
-                    max_attempts=effective.recovery.max_recovery_attempts,
-                    dismiss_keys=effective.recovery.dismiss_dialog_keys,
-                    recovery_delay=effective.recovery.recovery_delay,
-                )
-
         fail_fast = task.settings.get("fail_fast", True)
         task_deadline = time.time() + effective.timeout.task_timeout
         results = []
@@ -88,6 +63,48 @@ class TaskRunner:
 
             if progress_callback:
                 progress_callback.on_step_start(i, label)
+
+            # Handle launch_application steps directly in the runner
+            if step.action == ActionType.LAUNCH_APPLICATION:
+                start = time.time()
+                try:
+                    app_config = AppConfig(
+                        path=step.app_path,
+                        title=step.app_title,
+                        wait_after_launch=step.wait_seconds or effective.app.wait_after_launch,
+                    )
+                    self._app_manager = ApplicationManager(
+                        config=app_config,
+                        graceful_close_timeout=effective.app.graceful_close_timeout,
+                        focus_delay=effective.app.focus_delay,
+                    )
+                    self._app_manager.launch()
+
+                    if effective.recovery.enabled:
+                        self._recovery = RecoveryStrategy(
+                            app_manager=self._app_manager,
+                            actions=self.agent.actions,
+                            max_attempts=effective.recovery.max_recovery_attempts,
+                            dismiss_keys=effective.recovery.dismiss_dialog_keys,
+                            recovery_delay=effective.recovery.recovery_delay,
+                        )
+
+                    result = StepResult(step=step, passed=True)
+                except Exception as e:
+                    result = StepResult(step=step, passed=False, error=str(e))
+                result.duration_seconds = time.time() - start
+
+                results.append(result)
+                if progress_callback:
+                    progress_callback.on_step_complete(i, result)
+                status = "PASS" if result.passed else "FAIL"
+                logger.info("  -> %s (%.1fs)", status, result.duration_seconds)
+                if result.error:
+                    logger.error("     Error: %s", result.error)
+                if not result.passed and fail_fast:
+                    logger.info("Fail-fast enabled, stopping execution.")
+                    break
+                continue
 
             step_timeout = step.timeout or effective.timeout.step_timeout
             result = self.agent.execute_step(step, step_timeout=step_timeout)

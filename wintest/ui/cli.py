@@ -51,9 +51,8 @@ def cli(ctx, config, verbose):
 @cli.command()
 @click.argument("task_file", type=click.Path(exists=True))
 @click.option("--no-report", is_flag=True, help="Skip report generation.")
-@click.option("--no-app", is_flag=True, help="Skip application launch/close.")
 @click.pass_context
-def run(ctx, task_file, no_report, no_app):
+def run(ctx, task_file, no_report):
     """Execute a test task from a YAML file."""
     settings = ctx.obj["settings"]
 
@@ -83,9 +82,6 @@ def run(ctx, task_file, no_report, no_app):
     agent = Agent(vision, screen, actions)
 
     runner = TaskRunner(agent, settings=settings)
-
-    if no_app and task.application:
-        task.application = None
 
     if no_report:
         runner.skip_report = True
@@ -168,6 +164,7 @@ ACTION_DESCRIPTIONS = {
     ActionType.SCROLL:       "Scroll the mouse wheel (positive=up, negative=down)",
     ActionType.WAIT:         "Pause execution for a specified duration",
     ActionType.VERIFY:       "Verify that a UI element is visible (or not visible)",
+    ActionType.LAUNCH_APPLICATION: "Launch an application and manage its window",
 }
 
 ACTION_REQUIRED_FIELDS = {
@@ -180,6 +177,7 @@ ACTION_REQUIRED_FIELDS = {
     ActionType.SCROLL:       ["scroll_amount"],
     ActionType.WAIT:         ["wait_seconds"],
     ActionType.VERIFY:       ["target"],
+    ActionType.LAUNCH_APPLICATION: ["app_path"],
 }
 
 

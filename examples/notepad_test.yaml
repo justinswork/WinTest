@@ -1,11 +1,12 @@
 name: "Notepad Basic Test"
 
-application:
-  path: "notepad.exe"
-  title: "Notepad"
-  wait_after_launch: 3
-
 steps:
+  - action: launch_application
+    app_path: "notepad.exe"
+    app_title: "Notepad"
+    wait_seconds: 3
+    description: "Launch Notepad"
+
   - action: click
     target: "text editing area"
     description: "Click the text area"

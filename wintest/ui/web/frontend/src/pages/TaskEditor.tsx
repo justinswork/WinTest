@@ -12,7 +12,6 @@ import { newStep } from '../api/types';
 const EMPTY_TASK: Task = {
   name: '',
   filename: null,
-  application: null,
   steps: [newStep()],
   settings: {},
 };
@@ -26,7 +25,6 @@ export function TaskEditor() {
   const isEditing = !!filename;
 
   const [task, setTask] = useState<Task>({ ...EMPTY_TASK, steps: [newStep()] });
-  const [appEnabled, setAppEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedFilename, setSavedFilename] = useState<string | null>(filename ?? null);
   const [dirty, setDirty] = useState(false);
@@ -46,13 +44,11 @@ export function TaskEditor() {
         const store = useTaskStore.getState();
         if (store.currentTask) {
           setTask(store.currentTask);
-          setAppEnabled(!!store.currentTask.application);
           setSavedFilename(filename);
         }
       });
     } else {
       setTask({ ...EMPTY_TASK, steps: [newStep()] });
-      setAppEnabled(false);
       setSavedFilename(null);
     }
     setDirty(false);
@@ -230,44 +226,6 @@ export function TaskEditor() {
           onChange={e => updateTask({ ...task, name: e.target.value })}
           placeholder={t('taskEditor.taskNamePlaceholder')}
         />
-      </div>
-
-      <div className="form-group">
-        <label>
-          <input
-            type="checkbox"
-            checked={appEnabled}
-            onChange={e => {
-              setAppEnabled(e.target.checked);
-              if (!e.target.checked) updateTask({ ...task, application: null });
-              else updateTask({ ...task, application: { path: '', title: '', wait_after_launch: 3 } });
-            }}
-          />
-          {' '}{t('taskEditor.launchApp')}
-        </label>
-        {appEnabled && task.application && (
-          <div className="app-config">
-            <input
-              className="input"
-              placeholder={t('taskEditor.appPath')}
-              value={(task.application.path as string) ?? ''}
-              onChange={e => updateTask({ ...task, application: { ...task.application!, path: e.target.value } })}
-            />
-            <input
-              className="input"
-              placeholder={t('taskEditor.windowTitle')}
-              value={(task.application.title as string) ?? ''}
-              onChange={e => updateTask({ ...task, application: { ...task.application!, title: e.target.value } })}
-            />
-            <input
-              className="input"
-              type="number"
-              placeholder={t('taskEditor.waitAfterLaunch')}
-              value={(task.application.wait_after_launch as number) ?? 3}
-              onChange={e => updateTask({ ...task, application: { ...task.application!, wait_after_launch: parseFloat(e.target.value) || 3 } })}
-            />
-          </div>
-        )}
       </div>
 
       <div className="form-group">

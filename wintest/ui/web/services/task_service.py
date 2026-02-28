@@ -57,12 +57,13 @@ def get_task(filename: str, settings=None) -> TaskModel:
             retry_attempts=step.retry_attempts,
             retry_delay=step.retry_delay,
             timeout=step.timeout,
+            app_path=step.app_path,
+            app_title=step.app_title,
         ))
 
     return TaskModel(
         name=task.name,
         filename=filename,
-        application=task.application,
         steps=steps,
         settings=task.settings,
     )
@@ -80,9 +81,6 @@ def save_task(task: TaskModel, filename: str | None = None) -> str:
         "name": task.name,
         "steps": [],
     }
-
-    if task.application:
-        data["application"] = task.application
 
     for step in task.steps:
         step_data = {"action": step.action}
@@ -108,6 +106,10 @@ def save_task(task: TaskModel, filename: str | None = None) -> str:
             step_data["retry_delay"] = step.retry_delay
         if step.timeout is not None:
             step_data["timeout"] = step.timeout
+        if step.app_path is not None:
+            step_data["app_path"] = step.app_path
+        if step.app_title is not None:
+            step_data["app_title"] = step.app_title
         data["steps"].append(step_data)
 
     if task.settings:

@@ -13,6 +13,7 @@ class ActionType(Enum):
     SCROLL = "scroll"
     WAIT = "wait"
     VERIFY = "verify"
+    LAUNCH_APPLICATION = "launch_application"
 
 
 @dataclass
@@ -25,6 +26,8 @@ class Step:
     keys: Optional[list[str]] = None
     scroll_amount: int = 0
     wait_seconds: float = 0.0
+    app_path: Optional[str] = None
+    app_title: Optional[str] = None
     expected: bool = True
     retry_attempts: int = 3
     retry_delay: float = 2.0
@@ -35,7 +38,6 @@ class Step:
 class TaskDefinition:
     name: str
     steps: list[Step]
-    application: Optional[dict] = None
     settings: dict = field(default_factory=dict)
 
 

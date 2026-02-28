@@ -14,7 +14,8 @@ const NEEDS_TEXT = ['type'];
 const NEEDS_KEY = ['press_key'];
 const NEEDS_KEYS = ['hotkey'];
 const NEEDS_SCROLL = ['scroll'];
-const NEEDS_WAIT = ['wait'];
+const NEEDS_WAIT = ['wait', 'launch_application'];
+const NEEDS_APP_PATH = ['launch_application'];
 
 export function StepForm({ step, index, onChange, onDelete }: Props) {
   const { t } = useTranslation();
@@ -38,6 +39,22 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
       </div>
 
       <div className="step-form-fields">
+        {NEEDS_APP_PATH.includes(step.action) && (
+          <>
+            <input
+              className="input"
+              placeholder={t('stepForm.appPathPlaceholder')}
+              value={step.app_path ?? ''}
+              onChange={e => update('app_path', e.target.value || null)}
+            />
+            <input
+              className="input"
+              placeholder={t('stepForm.appTitlePlaceholder')}
+              value={step.app_title ?? ''}
+              onChange={e => update('app_title', e.target.value || null)}
+            />
+          </>
+        )}
         {NEEDS_TARGET.includes(step.action) && (
           <input
             className="input"

@@ -11,12 +11,13 @@ export interface Step {
   retry_attempts: number;
   retry_delay: number;
   timeout: number | null;
+  app_path: string | null;
+  app_title: string | null;
 }
 
 export interface Task {
   name: string;
   filename: string | null;
-  application: Record<string, unknown> | null;
   steps: Step[];
   settings: Record<string, unknown>;
 }
@@ -129,5 +130,7 @@ export function newStep(): Step {
     retry_attempts: 3,
     retry_delay: 2.0,
     timeout: null,
+    app_path: null,
+    app_title: null,
   };
 }

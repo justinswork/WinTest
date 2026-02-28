@@ -45,7 +45,9 @@ def validate_task(task: TaskDefinition) -> list[str]:
                 f"Step {i}: 'scroll' requires a non-zero 'scroll_amount' value"
             )
 
-    if task.application and "path" not in task.application:
-        issues.append("Application config is missing required 'path' field")
+        if step.action == ActionType.LAUNCH_APPLICATION and not step.app_path:
+            issues.append(
+                f"Step {i}: 'launch_application' requires an 'app_path' field"
+            )
 
     return issues
