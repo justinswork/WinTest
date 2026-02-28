@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { reportApi } from '../api/client';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { showToast } from '../components/common/Toast';
 import type { ReportData } from '../api/types';
 
 export function ReportViewer() {
   const { reportId } = useParams<{ reportId: string }>();
+  const navigate = useNavigate();
   const [report, setReport] = useState<ReportData | null>(null);
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
 
@@ -16,13 +18,27 @@ export function ReportViewer() {
     }
   }, [reportId]);
 
+  const handleDelete = async () => {
+    if (!reportId || !window.confirm('Delete this report? This cannot be undone.')) return;
+    try {
+      await reportApi.delete(reportId);
+      showToast('Report deleted');
+      navigate('/reports');
+    } catch {
+      showToast('Failed to delete report', 'error');
+    }
+  };
+
   if (!report) return <LoadingSpinner message="Loading report..." />;
 
   return (
     <div className="report-viewer">
       <div className="section-header">
         <h2>{report.task_name}</h2>
-        <StatusBadge passed={report.passed} />
+        <div className="header-actions">
+          <StatusBadge passed={report.passed} />
+          <button className="btn btn-danger btn-sm" onClick={handleDelete}>Delete</button>
+        </div>
       </div>
       <p className="text-muted">
         {report.summary.passed}/{report.summary.total} passed &middot; Generated {new Date(report.generated_at).toLocaleString()}

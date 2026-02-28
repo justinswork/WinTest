@@ -24,6 +24,16 @@ async def get_report(report_id: str):
         raise HTTPException(status_code=404, detail=f"Report not found: {report_id}")
 
 
+@router.delete("/{report_id}")
+async def delete_report(report_id: str):
+    """Delete a report and its screenshots."""
+    try:
+        report_service.delete_report(report_id)
+        return {"message": f"Deleted {report_id}"}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Report not found: {report_id}")
+
+
 @router.get("/{report_id}/screenshots/{filename}")
 async def get_screenshot(report_id: str, filename: str):
     """Serve a screenshot image."""

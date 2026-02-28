@@ -4,11 +4,12 @@ import { useTaskStore } from '../stores/taskStore';
 import { useExecutionStore } from '../stores/executionStore';
 import { reportApi } from '../api/client';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { showToast } from '../components/common/Toast';
 import type { ReportSummary } from '../api/types';
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { tasks, fetchTasks } = useTaskStore();
+  const { tasks, fetchTasks, deleteTask } = useTaskStore();
   const { modelStatus, loadModel, fetchStatus, startRun, status } = useExecutionStore();
   const [reports, setReports] = useState<ReportSummary[]>([]);
 
@@ -21,6 +22,16 @@ export function Dashboard() {
   const handleRun = async (filename: string) => {
     await startRun(filename);
     navigate('/execution');
+  };
+
+  const handleDeleteTask = async (filename: string, name: string) => {
+    if (!window.confirm(`Delete task "${name}"? This cannot be undone.`)) return;
+    try {
+      await deleteTask(filename);
+      showToast('Task deleted');
+    } catch {
+      showToast('Failed to delete task', 'error');
+    }
   };
 
   return (
@@ -57,6 +68,9 @@ export function Dashboard() {
                   </button>
                   <button className="btn btn-secondary" onClick={() => navigate(`/tasks/${task.filename}/edit`)}>
                     Edit
+                  </button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteTask(task.filename, task.name)}>
+                    Delete
                   </button>
                 </div>
               </div>

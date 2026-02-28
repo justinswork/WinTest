@@ -1,6 +1,7 @@
 """Service for browsing past test reports."""
 
 import json
+import shutil
 from pathlib import Path
 
 from ..models import ReportSummary
@@ -55,6 +56,12 @@ def get_screenshot_path(report_id: str, filename: str) -> Path:
     if not path.exists():
         raise FileNotFoundError(f"Screenshot not found: {filename}")
     return path
+
+
+def delete_report(report_id: str) -> None:
+    """Delete a report directory and all its contents."""
+    path = _resolve_report(report_id)
+    shutil.rmtree(path)
 
 
 def _resolve_report(report_id: str) -> Path:

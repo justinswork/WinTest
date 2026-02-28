@@ -23,5 +23,6 @@ export const executionApi = {
 export const reportApi = {
   list: () => api.get<ReportSummary[]>('/reports').then(r => r.data),
   get: (id: string) => api.get<ReportData>(`/reports/${id}`).then(r => r.data),
+  delete: (id: string) => api.delete(`/reports/${id}`).then(r => r.data),
   screenshotUrl: (id: string, filename: string) => `/api/reports/${id}/screenshots/${filename}`,
 };
