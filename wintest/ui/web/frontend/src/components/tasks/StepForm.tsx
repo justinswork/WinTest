@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { Step } from '../../api/types';
 import { ActionPicker } from './ActionPicker';
@@ -16,19 +18,27 @@ const NEEDS_KEYS = ['hotkey'];
 const NEEDS_SCROLL = ['scroll'];
 const NEEDS_WAIT = ['wait', 'launch_application'];
 const NEEDS_APP_PATH = ['launch_application'];
+const NEEDS_EXPECTED = ['verify'];
 
 export function StepForm({ step, index, onChange, onDelete }: Props) {
   const { t } = useTranslation();
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const update = (field: string, value: unknown) => {
     onChange(index, { ...step, [field]: value });
   };
+
+  const hasNonDefaultAdvanced =
+    step.retry_attempts !== 3 ||
+    step.retry_delay !== 2.0 ||
+    step.timeout !== null;
 
   return (
     <div className="step-form">
       <div className="step-form-header">
         <span className="step-number">#{index + 1}</span>
         <ActionPicker value={step.action} onChange={v => update('action', v)} />
+        <Link to={`/help#action-${step.action}`} className="help-btn" title={t('stepForm.helpTooltip')}>?</Link>
         <input
           className="input flex-1"
           placeholder={t('stepForm.descriptionPlaceholder')}
@@ -106,7 +116,68 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
             onChange={e => update('wait_seconds', parseFloat(e.target.value) || 0)}
           />
         )}
+        {NEEDS_EXPECTED.includes(step.action) && (
+          <label className="step-checkbox">
+            <input
+              type="checkbox"
+              checked={step.expected}
+              onChange={e => update('expected', e.target.checked)}
+            />
+            {t('stepForm.expectedLabel')}
+          </label>
+        )}
       </div>
+
+      <button
+        className="step-advanced-toggle"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+      >
+        {showAdvanced ? t('stepForm.hideAdvanced') : t('stepForm.showAdvanced')}
+        {!showAdvanced && hasNonDefaultAdvanced && <span className="advanced-indicator" />}
+      </button>
+
+      {showAdvanced && (
+        <div className="step-advanced">
+          <div className="step-advanced-row">
+            <label>
+              {t('stepForm.retryAttempts')}
+              <input
+                className="input"
+                type="number"
+                min="0"
+                value={step.retry_attempts}
+                onChange={e => update('retry_attempts', parseInt(e.target.value) || 0)}
+              />
+            </label>
+            <label>
+              {t('stepForm.retryDelay')}
+              <input
+                className="input"
+                type="number"
+                min="0"
+                step="0.5"
+                value={step.retry_delay}
+                onChange={e => update('retry_delay', parseFloat(e.target.value) || 0)}
+              />
+            </label>
+            <label>
+              {t('stepForm.timeout')}
+              <input
+                className="input"
+                type="number"
+                min="0"
+                step="1"
+                placeholder={t('stepForm.timeoutPlaceholder')}
+                value={step.timeout ?? ''}
+                onChange={e => {
+                  const v = e.target.value;
+                  update('timeout', v === '' ? null : parseFloat(v) || null);
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

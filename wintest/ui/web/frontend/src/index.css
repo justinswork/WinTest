@@ -458,6 +458,72 @@ select.input {
   display: none;
 }
 
+.step-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.step-checkbox input[type="checkbox"] {
+  margin: 0;
+}
+
+.step-advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.step-advanced-toggle:hover {
+  color: var(--primary);
+}
+
+.advanced-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.step-advanced {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.step-advanced-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.step-advanced-row > label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.step-advanced-row .input {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.5rem;
+}
+
 /* ── Sortable steps (drag & drop) ────────────────────────── */
 .sortable-step {
   display: flex;
@@ -843,6 +909,168 @@ select.input {
 .theme-icon {
   font-size: 1.5rem;
   line-height: 1;
+}
+
+/* ── Help page ──────────────────────────────────────────── */
+.help-page {
+  max-width: 800px;
+}
+
+.help-page p {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.help-page ol {
+  margin: 0.5rem 0 1rem 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.help-page code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  background: var(--bg-surface-hover);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.help-section {
+  margin-bottom: 2.5rem;
+}
+
+.help-section > h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.action-doc-card {
+  margin-bottom: 1rem;
+  scroll-margin-top: 5rem;
+}
+
+.action-doc-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.action-doc-card h3 code {
+  font-size: 1rem;
+  background: var(--primary);
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius);
+}
+
+.action-doc-title {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.action-doc-summary {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.action-doc-description {
+  color: var(--text-muted);
+}
+
+.action-doc-card h4 {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.param-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.param-table th {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.param-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.param-table code {
+  font-size: 0.78rem;
+}
+
+.param-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.param-required {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.param-optional {
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+}
+
+.yaml-example {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.85rem;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.yaml-example code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* ── Help button (StepForm) ────────────────────────────── */
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.help-btn:hover {
+  background: var(--primary);
+  color: #fff;
 }
 
 /* ── Light theme adjustments ─────────────────────────────── */

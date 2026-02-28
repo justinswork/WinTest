@@ -15,6 +15,7 @@ export function Navbar() {
         <NavLink to="/execution">{t('nav.execution')}</NavLink>
         <NavLink to="/reports">{t('nav.reports')}</NavLink>
         <NavLink to="/settings">{t('nav.settings')}</NavLink>
+        <NavLink to="/help">{t('nav.help')}</NavLink>
       </div>
     </nav>
   );
