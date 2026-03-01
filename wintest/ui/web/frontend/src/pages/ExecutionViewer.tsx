@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ArrowUpNarrowWide, ArrowDownNarrowWide } from 'lucide-react';
 import { useExecutionStore } from '../stores/executionStore';
 import { useExecutionWebSocket } from '../api/ws';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -11,16 +12,33 @@ const STATUS_KEYS: Record<string, string> = {
   failed: 'execution.failed',
 };
 
+const SORT_STORAGE_KEY = 'wintest-execution-sort';
+
 export function ExecutionViewer() {
   const { t } = useTranslation();
   const store = useExecutionStore();
   const { handleWsMessage, fetchStatus } = store;
+  const [sortNewestFirst, setSortNewestFirst] = useState(() => localStorage.getItem(SORT_STORAGE_KEY) !== 'asc');
 
   useExecutionWebSocket(handleWsMessage);
 
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  const toggleSort = () => {
+    const next = !sortNewestFirst;
+    setSortNewestFirst(next);
+    localStorage.setItem(SORT_STORAGE_KEY, next ? 'desc' : 'asc');
+  };
+
+  const sortedResults = sortNewestFirst ? [...store.stepResults].reverse() : store.stepResults;
+
+  const hasFailed = store.stepResults.some(r => !r.passed);
+  const isComplete = store.status === 'completed' || store.status === 'failed';
+  const progressClass = isComplete
+    ? (hasFailed ? 'progress-failed' : 'progress-passed')
+    : (hasFailed ? 'progress-warning' : '');
 
   const latestScreenshot = store.stepResults.length > 0
     ? store.stepResults[store.stepResults.length - 1]?.screenshot_base64
@@ -52,14 +70,23 @@ export function ExecutionViewer() {
       <div className="execution-layout">
         <div className="step-list-panel">
           {store.totalSteps > 0 && (
-            <div className="progress-bar-container">
-              <div
-                className="progress-bar"
-                style={{ width: `${(store.stepResults.length / store.totalSteps) * 100}%` }}
-              />
-              <span className="progress-text">
-                {store.stepResults.length} / {store.totalSteps}
-              </span>
+            <div className="step-list-toolbar">
+              <div className="progress-bar-container" style={{ flex: 1 }}>
+                <div
+                  className={`progress-bar ${progressClass}`}
+                  style={{ width: `${(store.stepResults.length / store.totalSteps) * 100}%` }}
+                />
+                <span className="progress-text">
+                  {store.stepResults.length} / {store.totalSteps}
+                </span>
+              </div>
+              <button
+                className="btn-icon"
+                onClick={toggleSort}
+                title={t(sortNewestFirst ? 'execution.sortOldestFirst' : 'execution.sortNewestFirst')}
+              >
+                {sortNewestFirst ? <ArrowUpNarrowWide size={16} /> : <ArrowDownNarrowWide size={16} />}
+              </button>
             </div>
           )}
 
@@ -71,7 +98,7 @@ export function ExecutionViewer() {
             </div>
           )}
 
-          {[...store.stepResults].reverse().map((result) => (
+          {sortedResults.map((result) => (
             <div
               key={result.step_num}
               className={`step-card ${result.passed ? 'step-passed' : 'step-failed'}`}

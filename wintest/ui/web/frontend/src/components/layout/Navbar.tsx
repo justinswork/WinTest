@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, FilePlus, FolderPlus, Play, FileText, Settings, HelpCircle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, FlaskConical, FolderOpen, Play, FileText, Settings, HelpCircle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const STORAGE_KEY = 'wintest-sidebar-collapsed';
 
@@ -25,8 +25,8 @@ export function Sidebar() {
       </div>
       <div className="sidebar-links">
         <NavLink to="/" end title={collapsed ? t('nav.dashboard') : undefined}><LayoutDashboard size={18} />{!collapsed && <span>{t('nav.dashboard')}</span>}</NavLink>
-        <NavLink to="/tests/new" title={collapsed ? t('nav.newTest') : undefined}><FilePlus size={18} />{!collapsed && <span>{t('nav.newTest')}</span>}</NavLink>
-        <NavLink to="/test-suites/new" title={collapsed ? t('nav.newTestSuite') : undefined}><FolderPlus size={18} />{!collapsed && <span>{t('nav.newTestSuite')}</span>}</NavLink>
+        <NavLink to="/tests" title={collapsed ? t('nav.tests') : undefined}><FlaskConical size={18} />{!collapsed && <span>{t('nav.tests')}</span>}</NavLink>
+        <NavLink to="/test-suites" title={collapsed ? t('nav.testSuites') : undefined}><FolderOpen size={18} />{!collapsed && <span>{t('nav.testSuites')}</span>}</NavLink>
         <NavLink to="/execution" title={collapsed ? t('nav.execution') : undefined}><Play size={18} />{!collapsed && <span>{t('nav.execution')}</span>}</NavLink>
         <NavLink to="/reports" title={collapsed ? t('nav.reports') : undefined}><FileText size={18} />{!collapsed && <span>{t('nav.reports')}</span>}</NavLink>
         <NavLink to="/settings" title={collapsed ? t('nav.settings') : undefined}><Settings size={18} />{!collapsed && <span>{t('nav.settings')}</span>}</NavLink>

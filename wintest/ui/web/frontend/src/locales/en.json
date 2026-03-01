@@ -1,11 +1,11 @@
 {
   "nav.brand": "wintest",
   "nav.dashboard": "Dashboard",
-  "nav.newTest": "New Test",
+  "nav.tests": "Tests",
+  "nav.testSuites": "Test Suites",
   "nav.execution": "Execution",
   "nav.reports": "Reports",
   "nav.settings": "Settings",
-  "nav.newTestSuite": "New Test Suite",
   "nav.help": "Help",
   "nav.collapse": "Collapse sidebar",
   "nav.expand": "Expand sidebar",
@@ -31,6 +31,10 @@
   "dashboard.testSuiteDeleted": "Test suite deleted",
   "dashboard.testSuiteDeleteFailed": "Failed to delete test suite",
   "dashboard.testSuiteRunFailed": "Failed to start test suite run",
+  "dashboard.execution": "Execution",
+  "dashboard.viewDetails": "View Details",
+  "dashboard.currentStep": "Step #{{step}}: {{label}}",
+  "dashboard.stepSummary": "{{passed}} passed, {{failed}} failed",
 
   "testEditor.newTest": "New Test",
   "testEditor.editTest": "Edit: {{name}}",
@@ -86,6 +90,8 @@
   "execution.clickedAt": "Clicked at: [{{coords}}]",
   "execution.screenshotAlt": "Latest screenshot",
   "execution.screenshotPlaceholder": "Screenshots will appear here during execution",
+  "execution.sortNewestFirst": "Newest first",
+  "execution.sortOldestFirst": "Oldest first",
 
   "reports.title": "Reports",
   "reports.noReports": "No reports yet.",

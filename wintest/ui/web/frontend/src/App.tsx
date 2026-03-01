@@ -1,7 +1,9 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { Dashboard } from './pages/Dashboard';
+import { TestList } from './pages/TestList';
 import { TestEditor } from './pages/TestEditor';
+import { TestSuiteList } from './pages/TestSuiteList';
 import { TestSuiteEditor } from './pages/TestSuiteEditor';
 import { TestSuiteViewer } from './pages/TestSuiteViewer';
 import { ExecutionViewer } from './pages/ExecutionViewer';
@@ -15,8 +17,10 @@ const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { path: '/', element: <Dashboard /> },
+      { path: '/tests', element: <TestList /> },
       { path: '/tests/new', element: <TestEditor /> },
       { path: '/tests/:filename/edit', element: <TestEditor /> },
+      { path: '/test-suites', element: <TestSuiteList /> },
       { path: '/test-suites/new', element: <TestSuiteEditor /> },
       { path: '/test-suites/:filename', element: <TestSuiteViewer /> },
       { path: '/test-suites/:filename/edit', element: <TestSuiteEditor /> },

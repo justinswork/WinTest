@@ -1,44 +1,41 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Play, Pencil, Trash2 } from 'lucide-react';
-import { useTestStore } from '../stores/testStore';
-import { useTestSuiteStore } from '../stores/testSuiteStore';
+import { ArrowRight } from 'lucide-react';
 import { useExecutionStore } from '../stores/executionStore';
-import { reportApi, executionApi } from '../api/client';
+import { useExecutionWebSocket } from '../api/ws';
+import { reportApi } from '../api/client';
 import { StatusBadge } from '../components/common/StatusBadge';
-import { showToast } from '../components/common/Toast';
 import type { ReportSummary } from '../api/types';
+
+const STATUS_KEYS: Record<string, string> = {
+  idle: 'execution.idle',
+  running: 'execution.running',
+  completed: 'execution.completed',
+  failed: 'execution.failed',
+};
 
 export function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tests, fetchTests, deleteTest } = useTestStore();
-  const { testSuites, fetchTestSuites, deleteTestSuite } = useTestSuiteStore();
-  const { modelStatus, loadModel, fetchStatus, startRun, status } = useExecutionStore();
+  const { modelStatus, loadModel, fetchStatus, handleWsMessage, status, testName, currentStep, totalSteps, stepResults, currentLabel, error } = useExecutionStore();
   const [reports, setReports] = useState<ReportSummary[]>([]);
 
+  useExecutionWebSocket(handleWsMessage);
+
   useEffect(() => {
-    fetchTests();
-    fetchTestSuites();
     fetchStatus();
     reportApi.list().then(setReports);
-  }, [fetchTests, fetchTestSuites, fetchStatus]);
+  }, [fetchStatus]);
 
-  const handleRun = async (filename: string) => {
-    await startRun(filename);
-    navigate('/execution');
-  };
-
-  const handleDeleteTest = async (filename: string, name: string) => {
-    if (!window.confirm(t('dashboard.deleteTestConfirm', { name }))) return;
-    try {
-      await deleteTest(filename);
-      showToast(t('dashboard.testDeleted'));
-    } catch {
-      showToast(t('dashboard.testDeleteFailed'), 'error');
-    }
-  };
+  const showExecution = status !== 'idle' || testName;
+  const passedCount = stepResults.filter(r => r.passed).length;
+  const failedCount = stepResults.filter(r => !r.passed).length;
+  const hasFailed = failedCount > 0;
+  const isComplete = status === 'completed' || status === 'failed';
+  const progressClass = isComplete
+    ? (hasFailed ? 'progress-failed' : 'progress-passed')
+    : (hasFailed ? 'progress-warning' : '');
 
   return (
     <div className="dashboard">
@@ -55,90 +52,44 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="section">
-        <div className="section-header">
-          <h2>{t('dashboard.tests')}</h2>
-          <button className="btn btn-primary" onClick={() => navigate('/tests/new')}><Plus size={16} />{t('dashboard.newTest')}</button>
-        </div>
-        {tests.length === 0 ? (
-          <p className="empty-state">{t('dashboard.noTests')}</p>
-        ) : (
-          <div className="card-grid">
-            {tests.map(test => (
-              <div key={test.filename} className="card">
-                <h3>{test.name}</h3>
-                <p className="text-muted">{test.filename} &middot; {test.step_count} steps</p>
-                <div className="card-actions">
-                  <button className="btn-icon" onClick={() => handleRun(test.filename)} disabled={status === 'running'} title={t('common.run')}>
-                    <Play size={16} />
-                  </button>
-                  <button className="btn-icon" onClick={() => navigate(`/tests/${test.filename}/edit`)} title={t('common.edit')}>
-                    <Pencil size={16} />
-                  </button>
-                  <button className="btn-icon danger" onClick={() => handleDeleteTest(test.filename, test.name)} title={t('common.delete')}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
+      {showExecution && (
+        <div className="section">
+          <div className="section-header">
+            <h2>{t('dashboard.execution')}</h2>
+            <button className="btn btn-secondary" onClick={() => navigate('/execution')}>
+              {t('dashboard.viewDetails')}<ArrowRight size={16} />
+            </button>
           </div>
-        )}
-      </div>
-
-      <div className="section">
-        <div className="section-header">
-          <h2>{t('dashboard.testSuites')}</h2>
-          <button className="btn btn-primary" onClick={() => navigate('/test-suites/new')}><Plus size={16} />{t('dashboard.newTestSuite')}</button>
-        </div>
-        {testSuites.length === 0 ? (
-          <p className="empty-state">{t('dashboard.noTestSuites')}</p>
-        ) : (
-          <div className="card-grid">
-            {testSuites.map(testSuite => (
-              <div key={testSuite.filename} className="card card-clickable" onClick={() => navigate(`/test-suites/${testSuite.filename}`)}>
-                <h3>{testSuite.name}</h3>
-                <p className="text-muted">{testSuite.filename} &middot; {testSuite.test_count} tests</p>
-                {testSuite.description && <p className="text-muted">{testSuite.description}</p>}
-                <div className="card-actions" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    className="btn-icon"
-                    onClick={async () => {
-                      try {
-                        await executionApi.runTestSuite(testSuite.filename);
-                        navigate('/execution');
-                      } catch {
-                        showToast(t('dashboard.testSuiteRunFailed'), 'error');
-                      }
-                    }}
-                    disabled={status === 'running'}
-                    title={t('common.run')}
-                  >
-                    <Play size={16} />
-                  </button>
-                  <button className="btn-icon" onClick={() => navigate(`/test-suites/${testSuite.filename}/edit`)} title={t('common.edit')}>
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    className="btn-icon danger"
-                    onClick={async () => {
-                      if (!window.confirm(t('dashboard.deleteTestSuiteConfirm', { name: testSuite.name }))) return;
-                      try {
-                        await deleteTestSuite(testSuite.filename);
-                        showToast(t('dashboard.testSuiteDeleted'));
-                      } catch {
-                        showToast(t('dashboard.testSuiteDeleteFailed'), 'error');
-                      }
-                    }}
-                    title={t('common.delete')}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+          <div className="card card-clickable" onClick={() => navigate('/execution')}>
+            <div className="card-row">
+              <h3>{testName ?? t('execution.title')}</h3>
+              <span className={`execution-status status-${status}`}>
+                {t(STATUS_KEYS[status] ?? 'execution.idle')}
+              </span>
+            </div>
+            {totalSteps > 0 && (
+              <div className="progress-bar-container">
+                <div
+                  className={`progress-bar ${progressClass}`}
+                  style={{ width: `${(stepResults.length / totalSteps) * 100}%` }}
+                />
+                <span className="progress-text">
+                  {stepResults.length} / {totalSteps}
+                </span>
               </div>
-            ))}
+            )}
+            {currentLabel && status === 'running' && (
+              <p className="text-muted">{t('dashboard.currentStep', { step: currentStep, label: currentLabel })}</p>
+            )}
+            {stepResults.length > 0 && (
+              <p className="text-muted">
+                {t('dashboard.stepSummary', { passed: passedCount, failed: failedCount })}
+              </p>
+            )}
+            {error && <p className="text-danger">{error}</p>}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="section">
         <div className="section-header">
