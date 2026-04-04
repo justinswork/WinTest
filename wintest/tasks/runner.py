@@ -8,6 +8,7 @@ from typing import Optional
 from .schema import TestDefinition, TestResult, StepResult
 from ..steps import registry
 from ..core.agent import Agent
+from ..core.power import prevent_sleep, allow_sleep
 from ..config.settings import Settings
 from ..reporting.reporter import ReportGenerator
 
@@ -24,8 +25,19 @@ class TestRunner:
         self._app_manager: Optional[ApplicationManager] = None
         self._recovery: Optional[RecoveryStrategy] = None
 
-    def run(self, test: TestDefinition, progress_callback=None) -> TestResult:
+    def run(self, test: TestDefinition, progress_callback=None,
+            manage_power: bool = True) -> TestResult:
         """Execute all steps in a test definition."""
+        if manage_power:
+            prevent_sleep()
+        try:
+            return self._run(test, progress_callback)
+        finally:
+            if manage_power:
+                allow_sleep()
+
+    def _run(self, test: TestDefinition, progress_callback=None) -> TestResult:
+        """Internal: execute all steps in a test definition."""
         effective = self.settings.merge_test_settings(test.settings)
 
         report_dir = self._create_report_dir(test.name)

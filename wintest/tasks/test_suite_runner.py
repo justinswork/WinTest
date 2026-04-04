@@ -6,6 +6,7 @@ import os
 from .schema import TestSuiteDefinition, TestSuiteResult, TestResult
 from .loader import load_test
 from .runner import TestRunner
+from ..core.power import prevent_sleep, allow_sleep
 from ..config.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,25 @@ class TestSuiteRunner:
         logger.info("TESTS: %d", len(suite.test_paths))
         logger.info("=" * 40)
 
+        prevent_sleep()
+        try:
+            return self._run_tests(
+                suite, fail_fast, results, progress_callback,
+                on_test_start, on_test_complete, cancel_check,
+            )
+        finally:
+            allow_sleep()
+
+    def _run_tests(
+        self,
+        suite: TestSuiteDefinition,
+        fail_fast: bool,
+        results: list[TestResult],
+        progress_callback=None,
+        on_test_start=None,
+        on_test_complete=None,
+        cancel_check=None,
+    ) -> TestSuiteResult:
         for i, test_path in enumerate(suite.test_paths, 1):
             # Cancellation check
             if cancel_check and cancel_check():
@@ -77,7 +97,8 @@ class TestSuiteRunner:
             if on_test_start:
                 on_test_start(i, test.name, len(suite.test_paths))
 
-            result = self.runner.run(test, progress_callback=progress_callback)
+            result = self.runner.run(test, progress_callback=progress_callback,
+                                     manage_power=False)
             results.append(result)
 
             if on_test_complete:
