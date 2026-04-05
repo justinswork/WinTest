@@ -161,6 +161,9 @@
   "help.parametersLabel": "Parameters",
   "help.exampleLabel": "Example",
 
+  "common.duplicate": "Duplicate",
+  "common.duplicated": "Duplicated successfully",
+  "common.duplicateFailed": "Failed to duplicate",
   "common.run": "Run",
   "common.edit": "Edit",
   "common.delete": "Delete",

@@ -1,16 +1,16 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Play, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Play, Pencil, Trash2, Copy } from 'lucide-react';
 import { useTestSuiteStore } from '../stores/testSuiteStore';
 import { useExecutionStore } from '../stores/executionStore';
-import { executionApi } from '../api/client';
+import { executionApi, testSuiteApi } from '../api/client';
 import { showToast } from '../components/common/Toast';
 
 export function TestSuiteList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { testSuites, fetchTestSuites, deleteTestSuite } = useTestSuiteStore();
+  const { testSuites, fetchTestSuites, deleteTestSuite, saveTestSuite } = useTestSuiteStore();
   const { status } = useExecutionStore();
 
   useEffect(() => {
@@ -23,6 +23,17 @@ export function TestSuiteList() {
       navigate('/execution');
     } catch {
       showToast(t('dashboard.testSuiteRunFailed'), 'error');
+    }
+  };
+
+  const handleDuplicate = async (filename: string, name: string) => {
+    try {
+      const suite = await testSuiteApi.get(filename);
+      await saveTestSuite({ ...suite, name: `${name} (Copy)`, filename: null });
+      await fetchTestSuites();
+      showToast(t('common.duplicated'));
+    } catch {
+      showToast(t('common.duplicateFailed'), 'error');
     }
   };
 
@@ -59,6 +70,9 @@ export function TestSuiteList() {
                 </button>
                 <button className="btn-icon" onClick={() => navigate(`/test-suites/${testSuite.filename}/edit`)} title={t('common.edit')}>
                   <Pencil size={16} />
+                </button>
+                <button className="btn-icon" onClick={() => handleDuplicate(testSuite.filename, testSuite.name)} title={t('common.duplicate')}>
+                  <Copy size={16} />
                 </button>
                 <button className="btn-icon danger" onClick={() => handleDelete(testSuite.filename, testSuite.name)} title={t('common.delete')}>
                   <Trash2 size={16} />

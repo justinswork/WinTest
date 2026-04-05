@@ -1,15 +1,16 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Play, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Play, Pencil, Trash2, Copy } from 'lucide-react';
 import { useTestStore } from '../stores/testStore';
 import { useExecutionStore } from '../stores/executionStore';
+import { testApi } from '../api/client';
 import { showToast } from '../components/common/Toast';
 
 export function TestList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tests, fetchTests, deleteTest } = useTestStore();
+  const { tests, fetchTests, deleteTest, saveTest } = useTestStore();
   const { startRun, status } = useExecutionStore();
 
   useEffect(() => {
@@ -19,6 +20,17 @@ export function TestList() {
   const handleRun = async (filename: string) => {
     await startRun(filename);
     navigate('/execution');
+  };
+
+  const handleDuplicate = async (filename: string, name: string) => {
+    try {
+      const test = await testApi.get(filename);
+      await saveTest({ ...test, name: `${name} (Copy)`, filename: null });
+      await fetchTests();
+      showToast(t('common.duplicated'));
+    } catch {
+      showToast(t('common.duplicateFailed'), 'error');
+    }
   };
 
   const handleDelete = async (filename: string, name: string) => {
@@ -53,6 +65,9 @@ export function TestList() {
                 </button>
                 <button className="btn-icon" onClick={() => navigate(`/tests/${test.filename}/edit`)} title={t('common.edit')}>
                   <Pencil size={16} />
+                </button>
+                <button className="btn-icon" onClick={() => handleDuplicate(test.filename, test.name)} title={t('common.duplicate')}>
+                  <Copy size={16} />
                 </button>
                 <button className="btn-icon danger" onClick={() => handleDelete(test.filename, test.name)} title={t('common.delete')}>
                   <Trash2 size={16} />
