@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Play, Pencil, Trash2, Copy } from 'lucide-react';
@@ -12,10 +12,23 @@ export function TestList() {
   const navigate = useNavigate();
   const { tests, fetchTests, deleteTest, saveTest } = useTestStore();
   const { startRun, status } = useExecutionStore();
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTests();
   }, [fetchTests]);
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const test of tests) {
+      for (const tag of test.tags ?? []) set.add(tag);
+    }
+    return [...set].sort();
+  }, [tests]);
+
+  const filteredTests = tagFilter
+    ? tests.filter(test => (test.tags ?? []).includes(tagFilter))
+    : tests;
 
   const handleRun = async (filename: string) => {
     await startRun(filename);
@@ -47,18 +60,40 @@ export function TestList() {
     <div className="test-list">
       <div className="section-header">
         <h2>{t('dashboard.tests')}</h2>
-        <button className="btn btn-primary" onClick={() => navigate('/tests/new')}>
-          <Plus size={16} />{t('dashboard.newTest')}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {allTags.length > 0 && (
+            <select
+              className="input"
+              value={tagFilter ?? ''}
+              onChange={e => setTagFilter(e.target.value || null)}
+              style={{ width: 'auto', fontSize: '0.8rem' }}
+            >
+              <option value="">{t('testList.allTags')}</option>
+              {allTags.map(tag => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))}
+            </select>
+          )}
+          <button className="btn btn-primary" onClick={() => navigate('/tests/new')}>
+            <Plus size={16} />{t('dashboard.newTest')}
+          </button>
+        </div>
       </div>
-      {tests.length === 0 ? (
-        <p className="empty-state">{t('dashboard.noTests')}</p>
+      {filteredTests.length === 0 ? (
+        <p className="empty-state">{tagFilter ? t('testList.noMatchingTests') : t('dashboard.noTests')}</p>
       ) : (
         <div className="card-grid">
-          {tests.map(test => (
+          {filteredTests.map(test => (
             <div key={test.filename} className="card">
               <h3>{test.name}</h3>
               <p className="text-muted">{test.filename} &middot; {test.step_count} steps</p>
+              {(test.tags ?? []).length > 0 && (
+                <div className="tag-list">
+                  {test.tags.map(tag => (
+                    <span key={tag} className="tag-pill" onClick={() => setTagFilter(tag)}>{tag}</span>
+                  ))}
+                </div>
+              )}
               <div className="card-actions">
                 <button className="btn-icon" onClick={() => handleRun(test.filename)} disabled={status === 'running'} title={t('common.run')}>
                   <Play size={16} />

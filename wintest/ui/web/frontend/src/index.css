@@ -342,6 +342,85 @@ select.input {
   align-items: center;
 }
 
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.tag-pill {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.7rem;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.tag-pill:hover {
+  opacity: 0.8;
+}
+
+.tags-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 9999px;
+}
+
+.tag-chip-remove {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.7;
+}
+
+.tag-chip-remove:hover {
+  opacity: 1;
+}
+
+.tag-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 9999px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tag-add-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tag-input-inline {
+  width: 100px;
+  font-size: 0.78rem;
+  padding: 0.15rem 0.4rem;
+}
+
 /* ── Sections ────────────────────────────────────────────── */
 .section {
   margin-bottom: 2rem;

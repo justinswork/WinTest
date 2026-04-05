@@ -15,9 +15,6 @@ Run tests or suites on a cron schedule (e.g. nightly smoke tests) without manual
 ## Retry Failed Tests in Suites
 Re-run only the failed tests from a completed suite run, instead of re-running the entire suite.
 
-## Test Tagging & Filtering
-Tag tests (e.g. "smoke", "regression", "critical") and run filtered subsets from the UI.
-
 ## Test Recorder
 Record clicks and keystrokes on the desktop and auto-generate a test YAML from the recording. Should capture mouse clicks (with screen region descriptions), keyboard input, and timing between actions. Ideally runs as an overlay or background listener that the user can start/stop from the web UI.
 

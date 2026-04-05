@@ -17,6 +17,7 @@ const EMPTY_TEST: Test = {
   steps: [newStep()],
   settings: {},
   variables: {},
+  tags: [],
 };
 
 export function TestEditor() {
@@ -231,6 +232,12 @@ export function TestEditor() {
         />
       </div>
 
+      <TagsInput
+        tags={test.tags ?? []}
+        onChange={tags => updateTest({ ...test, tags })}
+        label={t('testEditor.tags')}
+      />
+
       <div className="form-group">
         <label>{t('testEditor.variables')}</label>
         <VariablesEditor
@@ -245,6 +252,64 @@ export function TestEditor() {
         <button className="btn btn-secondary" onClick={addStep} style={{ marginTop: '0.5rem' }}>
           <Plus size={16} />{t('testEditor.addStep')}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function TagsInput({ tags, onChange, label }: {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  label: string;
+}) {
+  const { t } = useTranslation();
+  const [adding, setAdding] = useState(false);
+  const [newTag, setNewTag] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (adding && inputRef.current) inputRef.current.focus();
+  }, [adding]);
+
+  const commitTag = () => {
+    const trimmed = newTag.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      onChange([...tags, trimmed]);
+    }
+    setNewTag('');
+    setAdding(false);
+  };
+
+  const removeTag = (tag: string) => {
+    onChange(tags.filter(t => t !== tag));
+  };
+
+  return (
+    <div className="form-group">
+      <label>{label}</label>
+      <div className="tags-input">
+        {tags.map(tag => (
+          <span key={tag} className="tag-chip">
+            {tag}
+            <button className="tag-chip-remove" onClick={() => removeTag(tag)}>&times;</button>
+          </span>
+        ))}
+        {adding ? (
+          <input
+            ref={inputRef}
+            className="input tag-input-inline"
+            value={newTag}
+            onChange={e => setNewTag(e.target.value)}
+            onBlur={commitTag}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commitTag();
+              if (e.key === 'Escape') { setNewTag(''); setAdding(false); }
+            }}
+            placeholder={t('testEditor.tagInputPlaceholder')}
+          />
+        ) : (
+          <button className="tag-add-btn" onClick={() => setAdding(true)}>+</button>
+        )}
       </div>
     </div>
   );

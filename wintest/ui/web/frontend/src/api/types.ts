@@ -25,12 +25,14 @@ export interface Test {
   steps: Step[];
   settings: Record<string, unknown>;
   variables: Record<string, string>;
+  tags: string[];
 }
 
 export interface TestListItem {
   filename: string;
   name: string;
   step_count: number;
+  tags: string[];
 }
 
 export interface FieldInfo {

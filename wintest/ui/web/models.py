@@ -30,12 +30,14 @@ class TestModel(BaseModel):
     steps: list[StepModel]
     settings: dict = {}
     variables: dict = {}
+    tags: list[str] = []
 
 
 class TestListItem(BaseModel):
     filename: str
     name: str
     step_count: int
+    tags: list[str] = []
 
 
 class RunRequest(BaseModel):

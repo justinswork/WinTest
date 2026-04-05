@@ -20,6 +20,7 @@ def load_test(filepath: str, settings=None) -> TestDefinition:
 
     test_settings = data.get("settings", {})
     variables = data.get("variables", {})
+    tags = data.get("tags", [])
 
     # Resolve retry defaults from Settings cascade or test YAML
     if settings:
@@ -68,4 +69,5 @@ def load_test(filepath: str, settings=None) -> TestDefinition:
         steps=steps,
         settings=test_settings,
         variables=variables,
+        tags=tags,
     )

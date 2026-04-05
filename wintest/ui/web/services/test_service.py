@@ -27,6 +27,7 @@ def list_tests(settings=None) -> list[TestListItem]:
                 filename=path.name,
                 name=test.name,
                 step_count=len(test.steps),
+                tags=test.tags,
             ))
         except (ValueError, Exception):
             items.append(TestListItem(
@@ -71,6 +72,7 @@ def get_test(filename: str, settings=None) -> TestModel:
         steps=steps,
         settings=test.settings,
         variables=test.variables,
+        tags=test.tags,
     )
 
 
@@ -127,6 +129,9 @@ def save_test(test: TestModel, filename: str | None = None) -> str:
 
     if test.variables:
         data["variables"] = test.variables
+
+    if test.tags:
+        data["tags"] = test.tags
 
     if test.settings:
         data["settings"] = test.settings

@@ -46,6 +46,8 @@
   "testEditor.testName": "Test Name",
   "testEditor.testNamePlaceholder": "e.g. Notepad Basic Test",
   "testEditor.steps": "Steps",
+  "testEditor.tags": "Tags",
+  "testEditor.tagInputPlaceholder": "Tag name",
   "testEditor.addStep": "Add Step",
   "testEditor.saved": "Test saved successfully",
   "testEditor.saveFailed": "Failed to save test",
@@ -164,6 +166,9 @@
   "help.optionalLabel": "Optional",
   "help.parametersLabel": "Parameters",
   "help.exampleLabel": "Example",
+
+  "testList.allTags": "All tags",
+  "testList.noMatchingTests": "No tests match the selected tag.",
 
   "common.duplicate": "Duplicate",
   "common.duplicated": "Duplicated successfully",

@@ -30,6 +30,7 @@ class TestDefinition:
     steps: list[Step]
     settings: dict = field(default_factory=dict)
     variables: dict = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
 
 
 @dataclass
