@@ -6,8 +6,23 @@ Add the ability to export test reports as PDF files. This would make it easy to 
 ## User-Defined Custom Steps
 Allow users to define their own custom step types (composite steps or macros) that combine multiple built-in steps into a reusable action. This would reduce repetition across tests.
 
-## Screenshot Comparison / Visual Regression
-Compare screenshots against saved baseline images to automatically detect unexpected UI changes between runs.
+## Screenshot Baselines & Visual Regression
+Multi-part feature for comparing screenshots against known-good baselines:
+
+### Baseline Storage & Management
+- Add a "Set as Baseline" button on passing reports that copies screenshots to a stable per-test location (e.g. `baselines/<test_name>/step_1.png`)
+- Baselines persist independently of report cleanup
+- "Update Baseline" to replace an existing baseline with a new passing run
+
+### Screenshot Comparison Viewer
+- When viewing a failed report, show the baseline screenshot alongside the actual screenshot for each step
+- Three display modes the user can toggle between: side-by-side, toggle (flip between images), and overlay (diff highlight)
+- Highlight changed regions in the overlay mode
+
+### compare_screenshot Step Type
+- New step type that compares the current screen against the baseline screenshot for that step
+- Configurable similarity threshold (exact pixel match is too strict due to font rendering, DPI, etc.)
+- Passes if the screenshots are similar enough, fails with a visual diff if not
 
 ## Scheduled Test Runs
 Run tests or suites on a cron schedule (e.g. nightly smoke tests) without manual intervention.
@@ -17,9 +32,6 @@ Re-run only the failed tests from a completed suite run, instead of re-running t
 
 ## Test Recorder
 Record clicks and keystrokes on the desktop and auto-generate a test YAML from the recording. Should capture mouse clicks (with screen region descriptions), keyboard input, and timing between actions. Ideally runs as an overlay or background listener that the user can start/stop from the web UI.
-
-## Step Screenshot Preview
-Show the screenshot from the last run inline in the test editor, so you can see what each step looked like.
 
 ## Import / Export Tests
 Export tests as shareable YAML bundles (with suites) and import them, for sharing across teams or machines.
