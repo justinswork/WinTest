@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, HelpCircle } from 'lucide-react';
+import { X, HelpCircle, Copy } from 'lucide-react';
 import type { Step, FieldInfo } from '../../api/types';
 import { useTestStore } from '../../stores/testStore';
+import { useStepClipboard } from '../../stores/stepClipboard';
 import { StepPicker } from './StepPicker';
 
 interface Props {
@@ -132,6 +133,7 @@ const FIELD_RENDERERS: Record<string, FieldRenderer> = {
 export function StepForm({ step, index, onChange, onDelete }: Props) {
   const { t } = useTranslation();
   const { stepTypes } = useTestStore();
+  const copyStep = useStepClipboard(s => s.copy);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const update = (field: string, value: unknown) => {
@@ -159,6 +161,7 @@ export function StepForm({ step, index, onChange, onDelete }: Props) {
         <StepPicker value={step.action} onChange={v => update('action', v)} />
         <Link to={`/help#step-${step.action}`} className="help-btn" title={t('stepForm.helpTooltip')}><HelpCircle size={14} /></Link>
         <div className="flex-1" />
+        <button className="btn-icon" onClick={() => copyStep(step)} title={t('common.copy')}><Copy size={14} /></button>
         <button className="btn-icon danger" onClick={() => onDelete(index)} title={t('common.remove')}><X size={16} /></button>
       </div>
 
