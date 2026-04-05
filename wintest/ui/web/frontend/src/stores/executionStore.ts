@@ -104,6 +104,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
         break;
       }
       case 'run_completed':
+      case 'test_suite_completed':
         set({
           status: msg.passed ? 'completed' : 'failed',
         });
