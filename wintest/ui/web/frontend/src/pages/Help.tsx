@@ -96,20 +96,32 @@ export function Help() {
           on what the model sees on screen.
         </p>
         <p>
-          Tests are defined as YAML test files containing a list of steps. Each step specifies a
-          type to perform (click, type, verify, etc.) along with parameters like a target element
+          Tests are defined as YAML test files containing a list of steps. Each step specifies an
+          action to perform (click, type, verify, etc.) along with parameters like a target element
           description or text to type. When a test runs, wintest processes each step in order:
         </p>
         <ol>
           <li>Captures a screenshot of the current screen</li>
           <li>Sends the screenshot and step target to the AI vision model</li>
           <li>The model identifies the target element and returns coordinates</li>
-          <li>wintest performs the step (click, type, etc.) at those coordinates</li>
+          <li>wintest performs the action (click, type, etc.) at those coordinates</li>
           <li>Results are recorded with pass/fail status, timing, and screenshots</li>
         </ol>
         <p>
+          Tests support <strong>variables</strong> that can be defined in
+          the <code>variables:</code> section of the YAML or set at runtime with
+          the <code>set_variable</code> step. Reference them in any string field
+          with <code>{"{{variable_name}}"}</code> syntax.
+        </p>
+        <p>
+          The <strong>loop</strong> step lets you repeat a range of steps multiple
+          times (do/while style), and tests can be <strong>tagged</strong> for
+          filtering on the test list page.
+        </p>
+        <p>
           Tests can be created and managed through this web UI or by editing YAML files directly
-          in the <code>tests/</code> directory.
+          in the <code>tests/</code> directory. Group tests into <strong>test suites</strong> to
+          run multiple tests in sequence.
         </p>
       </section>
 
@@ -123,7 +135,9 @@ export function Help() {
       <section className="help-section">
         <h3>{t('help.commonParams')}</h3>
         <p>
-          These parameters can be set on any step type to control execution behavior.
+          These parameters can be set on most step types to control execution behavior.
+          They do not apply to runner-level steps
+          (<code>launch_application</code>, <code>set_variable</code>, <code>loop</code>).
         </p>
         <table className="param-table">
           <thead>

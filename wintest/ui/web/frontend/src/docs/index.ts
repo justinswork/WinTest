@@ -9,6 +9,8 @@ import { scrollDoc } from './scroll';
 import { waitDoc } from './wait';
 import { verifyDoc } from './verify';
 import { launchApplicationDoc } from './launch_application';
+import { setVariableDoc } from './set_variable';
+import { loopDoc } from './loop';
 
 export type { StepDoc, StepParam } from './types';
 
@@ -23,6 +25,8 @@ const allDocs: StepDoc[] = [
   scrollDoc,
   waitDoc,
   verifyDoc,
+  setVariableDoc,
+  loopDoc,
 ];
 
 export const stepDocs: Record<string, StepDoc> = Object.fromEntries(
