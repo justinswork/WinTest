@@ -1,13 +1,13 @@
-export interface ActionDoc {
+export interface StepDoc {
   name: string;
   title: string;
   summary: string;
   description: string;
-  parameters: ActionParam[];
+  parameters: StepParam[];
   example: string;
 }
 
-export interface ActionParam {
+export interface StepParam {
   name: string;
   type: string;
   required: boolean;

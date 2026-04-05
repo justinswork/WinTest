@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { stepDocList } from '../docs';
-import type { StepDoc } from '../docs';
+import type { StepDoc, StepParam } from '../docs';
 
 const COMMON_PARAMS = [
   {
@@ -50,7 +50,7 @@ function StepCard({ doc }: { doc: StepDoc }) {
           </tr>
         </thead>
         <tbody>
-          {doc.parameters.map(p => (
+          {doc.parameters.map((p: StepParam) => (
             <tr key={p.name}>
               <td><code>{p.name}</code></td>
               <td><code>{p.type}</code></td>

@@ -1,6 +1,6 @@
-import type { ActionDoc } from './types';
+import type { StepDoc } from './types';
 
-export const verifyDoc: ActionDoc = {
+export const verifyDoc: StepDoc = {
   name: 'verify',
   title: 'Verify',
   summary: 'Verify that a UI element is visible (or not visible).',

@@ -1,6 +1,6 @@
-import type { ActionDoc } from './types';
+import type { StepDoc } from './types';
 
-export const typeDoc: ActionDoc = {
+export const typeDoc: StepDoc = {
   name: 'type',
   title: 'Type',
   summary: 'Type text at the current cursor position.',

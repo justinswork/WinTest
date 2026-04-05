@@ -1,6 +1,6 @@
-import type { ActionDoc } from './types';
+import type { StepDoc } from './types';
 
-export const waitDoc: ActionDoc = {
+export const waitDoc: StepDoc = {
   name: 'wait',
   title: 'Wait',
   summary: 'Pause execution for a specified duration.',

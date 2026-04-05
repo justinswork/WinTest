@@ -100,7 +100,7 @@ export function TestSuiteViewer() {
         </div>
       </div>
 
-      {currentTestSuite.settings.fail_fast && (
+      {!!currentTestSuite.settings.fail_fast && (
         <div className="info-box">
           {t('testSuiteViewer.failFastEnabled')}
         </div>

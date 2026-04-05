@@ -17,13 +17,14 @@ vi.mock('../api/client', () => ({
 }));
 
 import { useExecutionStore } from '../stores/executionStore';
+import type { WsMessage } from '../api/types';
 
 function getStore() {
   return useExecutionStore.getState();
 }
 
 function dispatch(msg: object) {
-  getStore().handleWsMessage(msg as Parameters<typeof getStore.prototype.handleWsMessage>[0]);
+  getStore().handleWsMessage(msg as WsMessage);
 }
 
 beforeEach(() => {

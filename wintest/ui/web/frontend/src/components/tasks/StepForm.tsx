@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X, HelpCircle } from 'lucide-react';
@@ -18,7 +18,7 @@ type FieldRenderer = (
   field: FieldInfo,
   update: (name: string, value: unknown) => void,
   t: (key: string) => string,
-) => JSX.Element | null;
+) => ReactNode;
 
 const FIELD_RENDERERS: Record<string, FieldRenderer> = {
   target: (step, _field, update, t) => (
@@ -86,6 +86,22 @@ const FIELD_RENDERERS: Record<string, FieldRenderer> = {
       placeholder={t('stepForm.appTitlePlaceholder')}
       value={step.app_title ?? ''}
       onChange={e => update('app_title', e.target.value || null)}
+    />
+  ),
+  variable_name: (step, _field, update, t) => (
+    <input
+      className="input"
+      placeholder={t('stepForm.variableNamePlaceholder')}
+      value={step.variable_name ?? ''}
+      onChange={e => update('variable_name', e.target.value || null)}
+    />
+  ),
+  variable_value: (step, _field, update, t) => (
+    <input
+      className="input"
+      placeholder={t('stepForm.variableValuePlaceholder')}
+      value={step.variable_value ?? ''}
+      onChange={e => update('variable_value', e.target.value || null)}
     />
   ),
 };
