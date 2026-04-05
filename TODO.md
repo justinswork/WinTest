@@ -53,9 +53,6 @@ Tests are already plain YAML files that can be copied between machines. This ite
 ## Keyboard Shortcuts
 Global hotkeys to start/stop runs without switching to the browser.
 
-## Trend Dashboard
-Track pass/fail rates over time with charts showing test health trends.
-
 ## Notification Hooks
 Send results to Slack, email, or a webhook on test completion or failure.
 

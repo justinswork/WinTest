@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, FlaskConical, FolderOpen, Play, FileText, Settings, HelpCircle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, FlaskConical, FolderOpen, Play, FileText, TrendingUp, Settings, HelpCircle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const STORAGE_KEY = 'wintest-sidebar-collapsed';
 
@@ -29,6 +29,7 @@ export function Sidebar() {
         <NavLink to="/test-suites" title={collapsed ? t('nav.testSuites') : undefined}><FolderOpen size={18} />{!collapsed && <span>{t('nav.testSuites')}</span>}</NavLink>
         <NavLink to="/execution" title={collapsed ? t('nav.execution') : undefined}><Play size={18} />{!collapsed && <span>{t('nav.execution')}</span>}</NavLink>
         <NavLink to="/reports" title={collapsed ? t('nav.reports') : undefined}><FileText size={18} />{!collapsed && <span>{t('nav.reports')}</span>}</NavLink>
+        <NavLink to="/trends" title={collapsed ? t('nav.trends') : undefined}><TrendingUp size={18} />{!collapsed && <span>{t('nav.trends')}</span>}</NavLink>
         <NavLink to="/settings" title={collapsed ? t('nav.settings') : undefined}><Settings size={18} />{!collapsed && <span>{t('nav.settings')}</span>}</NavLink>
         <NavLink to="/help" title={collapsed ? t('nav.help') : undefined}><HelpCircle size={18} />{!collapsed && <span>{t('nav.help')}</span>}</NavLink>
       </div>

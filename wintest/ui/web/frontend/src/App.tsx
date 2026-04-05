@@ -9,6 +9,7 @@ import { TestSuiteViewer } from './pages/TestSuiteViewer';
 import { ExecutionViewer } from './pages/ExecutionViewer';
 import { ReportList } from './pages/ReportList';
 import { ReportViewer } from './pages/ReportViewer';
+import { Trends } from './pages/Trends';
 import { Settings } from './pages/Settings';
 import { Help } from './pages/Help';
 
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
       { path: '/execution', element: <ExecutionViewer /> },
       { path: '/reports', element: <ReportList /> },
       { path: '/reports/:reportId', element: <ReportViewer /> },
+      { path: '/trends', element: <Trends /> },
       { path: '/settings', element: <Settings /> },
       { path: '/help', element: <Help /> },
     ],

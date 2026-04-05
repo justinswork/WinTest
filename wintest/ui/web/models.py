@@ -85,6 +85,7 @@ class ReportSummary(BaseModel):
     passed_count: int
     failed_count: int
     generated_at: str
+    duration_seconds: float = 0.0
 
 
 class ValidationResult(BaseModel):

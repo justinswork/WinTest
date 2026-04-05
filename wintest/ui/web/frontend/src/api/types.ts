@@ -62,6 +62,7 @@ export interface ReportSummary {
   passed_count: number;
   failed_count: number;
   generated_at: string;
+  duration_seconds: number;
 }
 
 export interface ReportData {

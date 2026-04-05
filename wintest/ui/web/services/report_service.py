@@ -26,6 +26,9 @@ def list_reports() -> list[ReportSummary]:
             with open(json_path) as f:
                 data = json.load(f)
             summary = data.get("summary", {})
+            duration = sum(
+                s.get("duration_seconds", 0) for s in data.get("steps", [])
+            )
             summaries.append(ReportSummary(
                 report_id=report_dir.name,
                 test_name=data.get("test_name", data.get("task_name", "Unknown")),
@@ -34,6 +37,7 @@ def list_reports() -> list[ReportSummary]:
                 passed_count=summary.get("passed", 0),
                 failed_count=summary.get("failed", 0),
                 generated_at=data.get("generated_at", ""),
+                duration_seconds=round(duration, 2),
             ))
         except (json.JSONDecodeError, KeyError):
             continue
