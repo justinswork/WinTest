@@ -104,6 +104,29 @@ const FIELD_RENDERERS: Record<string, FieldRenderer> = {
       onChange={e => update('variable_value', e.target.value || null)}
     />
   ),
+  loop_target: (step, _field, update, t) => (
+    <input
+      className="input"
+      type="number"
+      min="1"
+      placeholder={t('stepForm.loopTargetPlaceholder')}
+      value={step.loop_target ?? ''}
+      onChange={e => {
+        const v = e.target.value;
+        update('loop_target', v === '' ? null : parseInt(v) || null);
+      }}
+    />
+  ),
+  repeat: (step, _field, update, t) => (
+    <input
+      className="input"
+      type="number"
+      min="1"
+      placeholder={t('stepForm.repeatPlaceholder')}
+      value={step.repeat || ''}
+      onChange={e => update('repeat', parseInt(e.target.value) || 0)}
+    />
+  ),
 };
 
 export function StepForm({ step, index, onChange, onDelete }: Props) {

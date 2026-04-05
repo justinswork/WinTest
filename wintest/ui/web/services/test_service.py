@@ -61,6 +61,8 @@ def get_test(filename: str, settings=None) -> TestModel:
             app_title=step.app_title,
             variable_name=step.variable_name,
             variable_value=step.variable_value,
+            loop_target=step.loop_target,
+            repeat=step.repeat,
         ))
 
     return TestModel(
@@ -117,6 +119,10 @@ def save_test(test: TestModel, filename: str | None = None) -> str:
             step_data["variable_name"] = step.variable_name
         if step.variable_value is not None:
             step_data["variable_value"] = step.variable_value
+        if step.loop_target is not None:
+            step_data["loop_target"] = step.loop_target
+        if step.repeat != 0:
+            step_data["repeat"] = step.repeat
         data["steps"].append(step_data)
 
     if test.variables:

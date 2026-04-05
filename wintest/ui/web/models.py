@@ -20,6 +20,8 @@ class StepModel(BaseModel):
     app_title: str | None = None
     variable_name: str | None = None
     variable_value: str | None = None
+    loop_target: int | None = None
+    repeat: int = 0
 
 
 class TestModel(BaseModel):

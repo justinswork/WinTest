@@ -20,6 +20,8 @@ class Step:
     timeout: Optional[float] = None
     variable_name: Optional[str] = None
     variable_value: Optional[str] = None
+    loop_target: Optional[int] = None
+    repeat: int = 0
 
 
 @dataclass

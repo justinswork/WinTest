@@ -53,8 +53,14 @@ class TestRunner:
         test_deadline = time.time() + effective.timeout.test_timeout
         results = []
         variables = VariableStore(test.variables)
+        loop_counters: dict[int, int] = {}
 
-        for i, step in enumerate(test.steps, 1):
+        idx = 0
+        total = len(test.steps)
+        while idx < total:
+            step = test.steps[idx]
+            i = idx + 1  # 1-indexed for display
+
             # Cancellation check
             if progress_callback and hasattr(progress_callback, 'is_cancelled') and progress_callback.is_cancelled():
                 logger.info("Run cancelled by user.")
@@ -82,7 +88,7 @@ class TestRunner:
                 self._app_manager.focus()
 
             label = step.description or step.action
-            logger.info("[Step %d/%d] %s...", i, len(test.steps), label)
+            logger.info("[Step %d/%d] %s...", i, total, label)
 
             if progress_callback:
                 progress_callback.on_step_start(i, label)
@@ -92,7 +98,7 @@ class TestRunner:
 
             defn = registry.get(step.action)
 
-            # Handle runner-level steps (e.g. launch_application, set_variable)
+            # Handle runner-level steps (e.g. launch_application, set_variable, loop)
             if defn and defn.is_runner_step:
                 start = time.time()
                 try:
@@ -102,6 +108,8 @@ class TestRunner:
                         "app_manager": self._app_manager,
                         "recovery": self._recovery,
                         "variables": variables,
+                        "loop_counters": loop_counters,
+                        "current_step_index": idx,
                     }
                     result = defn.execute(step, runner_ctx)
                     # Pick up any state changes from the step
@@ -121,6 +129,19 @@ class TestRunner:
                 if not result.passed and fail_fast:
                     logger.info("Fail-fast enabled, stopping execution.")
                     break
+
+                # Check if the step requested a jump (loop)
+                jump_to = runner_ctx.get("jump_to")
+                if jump_to is not None:
+                    if jump_to < 0 or jump_to >= total:
+                        results.append(StepResult(
+                            step=step, passed=False,
+                            error=f"Loop target out of range: step {jump_to + 1} (test has {total} steps)",
+                        ))
+                        break
+                    idx = jump_to
+                else:
+                    idx += 1
                 continue
 
             step_timeout = step.timeout or effective.timeout.step_timeout
@@ -153,6 +174,8 @@ class TestRunner:
             if not result.passed and fail_fast:
                 logger.info("Fail-fast enabled, stopping execution.")
                 break
+
+            idx += 1
 
         test_result = TestResult(test_name=test.name, step_results=results)
         self._print_summary(test_result)

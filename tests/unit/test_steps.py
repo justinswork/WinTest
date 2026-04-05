@@ -7,11 +7,11 @@ from wintest.tasks.schema import Step, TestDefinition
 from wintest.tasks.validator import validate_test
 
 EXPECTED_ACTIONS = {
-    "click", "double_click", "hotkey", "launch_application",
+    "click", "double_click", "hotkey", "launch_application", "loop",
     "press_key", "right_click", "scroll", "set_variable", "type", "verify", "wait",
 }
 
-RUNNER_STEPS = {"launch_application", "set_variable"}
+RUNNER_STEPS = {"launch_application", "loop", "set_variable"}
 
 
 class TestRegistry:
@@ -190,6 +190,40 @@ class TestSetVariableValidation:
             Step(action="set_variable"), 1
         )
         assert len(issues) == 2
+
+
+class TestLoopValidation:
+    def test_valid(self):
+        assert registry.get("loop").validate(
+            Step(action="loop", loop_target=1, repeat=3), 5
+        ) == []
+
+    def test_missing_loop_target(self):
+        issues = registry.get("loop").validate(
+            Step(action="loop", repeat=3), 5
+        )
+        assert len(issues) == 1
+        assert "loop_target" in issues[0]
+
+    def test_loop_target_zero(self):
+        issues = registry.get("loop").validate(
+            Step(action="loop", loop_target=0, repeat=3), 5
+        )
+        assert len(issues) == 1
+
+    def test_loop_target_not_earlier(self):
+        issues = registry.get("loop").validate(
+            Step(action="loop", loop_target=5, repeat=3), 5
+        )
+        assert len(issues) == 1
+        assert "earlier" in issues[0]
+
+    def test_repeat_zero(self):
+        issues = registry.get("loop").validate(
+            Step(action="loop", loop_target=1, repeat=0), 5
+        )
+        assert len(issues) == 1
+        assert "repeat" in issues[0]
 
 
 class TestValidateTest:

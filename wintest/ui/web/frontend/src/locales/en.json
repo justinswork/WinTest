@@ -131,6 +131,8 @@
 
   "stepForm.variableNamePlaceholder": "Variable name",
   "stepForm.variableValuePlaceholder": "Value (supports {{variable}} placeholders)",
+  "stepForm.loopTargetPlaceholder": "Loop back to step #",
+  "stepForm.repeatPlaceholder": "Number of times to repeat",
   "stepForm.descriptionPlaceholder": "Description (optional)",
   "stepForm.targetPlaceholder": "Target element (e.g. 'File menu')",
   "stepForm.textPlaceholder": "Text to type",
