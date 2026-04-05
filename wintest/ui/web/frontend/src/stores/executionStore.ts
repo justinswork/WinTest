@@ -3,6 +3,12 @@ import i18next from 'i18next';
 import type { StepResultData, WsMessage } from '../api/types';
 import { executionApi } from '../api/client';
 
+export interface LogEntry {
+  level: string;
+  message: string;
+  timestamp: string;
+}
+
 interface ExecutionState {
   status: 'idle' | 'running' | 'completed' | 'failed' | 'cancelled';
   runId: string | null;
@@ -13,6 +19,7 @@ interface ExecutionState {
   totalSteps: number;
   currentLabel: string | null;
   stepResults: StepResultData[];
+  logEntries: LogEntry[];
   modelStatus: 'not_loaded' | 'loading' | 'loaded';
   error: string | null;
 
@@ -35,6 +42,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
   totalSteps: 0,
   currentLabel: null,
   stepResults: [],
+  logEntries: [],
   modelStatus: 'not_loaded',
   error: null,
 
@@ -50,6 +58,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
           totalSteps: msg.total_steps ?? 0,
           currentStep: 0,
           stepResults: [],
+          logEntries: [],
           error: null,
         });
         break;
@@ -63,6 +72,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
           totalSteps: 0,
           currentStep: 0,
           stepResults: [],
+          logEntries: [],
           error: null,
         });
         break;
@@ -106,6 +116,15 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
           status: 'failed',
           error: msg.error ?? i18next.t('errors.unknownError'),
         });
+        break;
+      case 'log':
+        set((state) => ({
+          logEntries: [...state.logEntries, {
+            level: msg.level ?? 'INFO',
+            message: msg.message ?? '',
+            timestamp: msg.timestamp ?? '',
+          }],
+        }));
         break;
       case 'model_loading':
         set({ modelStatus: 'loading' });
@@ -197,6 +216,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
     totalSteps: 0,
     currentLabel: null,
     stepResults: [],
+    logEntries: [],
     error: null,
   }),
 }));

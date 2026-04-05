@@ -5,6 +5,7 @@ import base64
 import logging
 import os
 import uuid
+from datetime import datetime
 
 from ....core.vision import VisionModel
 from ....core.screen import ScreenCapture
@@ -17,6 +18,40 @@ from ....tasks.test_suite_runner import TestSuiteRunner
 from ..state import AppState, RunState
 
 logger = logging.getLogger(__name__)
+
+
+class WebSocketLogHandler(logging.Handler):
+    """Broadcasts log records to WebSocket clients during a test run."""
+
+    def __init__(self, run_id: str, app_state: AppState):
+        super().__init__()
+        self.run_id = run_id
+        self.app_state = app_state
+
+    def emit(self, record: logging.LogRecord):
+        try:
+            self.app_state.broadcast_sync({
+                "type": "log",
+                "run_id": self.run_id,
+                "level": record.levelname,
+                "message": self.format(record),
+                "timestamp": datetime.now().strftime("%H:%M:%S.%f")[:-3],
+            })
+        except Exception:
+            pass
+
+
+def _attach_log_handler(run_id: str, app_state: AppState) -> WebSocketLogHandler:
+    """Attach a WebSocket log handler to the wintest logger."""
+    handler = WebSocketLogHandler(run_id, app_state)
+    handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))
+    logging.getLogger("wintest").addHandler(handler)
+    return handler
+
+
+def _detach_log_handler(handler: WebSocketLogHandler):
+    """Remove the WebSocket log handler."""
+    logging.getLogger("wintest").removeHandler(handler)
 
 
 class WebSocketProgressCallback:
@@ -111,6 +146,7 @@ def start_run(test_file: str, app_state: AppState) -> dict:
 
 def _run_test(test_file: str, run_id: str, app_state: AppState, loop: asyncio.AbstractEventLoop):
     """Execute the test in a worker thread."""
+    log_handler = _attach_log_handler(run_id, app_state)
     try:
         # Ensure model is loaded
         if app_state.vision_model is None:
@@ -175,6 +211,7 @@ def _run_test(test_file: str, run_id: str, app_state: AppState, loop: asyncio.Ab
         })
 
     finally:
+        _detach_log_handler(log_handler)
         if app_state.current_run and app_state.current_run.run_id == run_id:
             app_state.last_run = app_state.current_run
             if app_state.current_run.status == "running":
@@ -255,6 +292,7 @@ def start_test_suite_run(suite_file: str, app_state: AppState) -> dict:
 
 def _run_test_suite(suite_file: str, run_id: str, app_state: AppState, loop: asyncio.AbstractEventLoop):
     """Execute the test suite in a worker thread."""
+    log_handler = _attach_log_handler(run_id, app_state)
     try:
         if app_state.vision_model is None:
             app_state.model_status = "loading"
@@ -340,6 +378,7 @@ def _run_test_suite(suite_file: str, run_id: str, app_state: AppState, loop: asy
         })
 
     finally:
+        _detach_log_handler(log_handler)
         if app_state.current_run and app_state.current_run.run_id == run_id:
             app_state.last_run = app_state.current_run
             if app_state.current_run.status == "running":

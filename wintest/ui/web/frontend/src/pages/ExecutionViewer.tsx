@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowUpNarrowWide, ArrowDownNarrowWide, XCircle, RotateCcw } from 'lucide-react';
+import { ArrowUpNarrowWide, ArrowDownNarrowWide, XCircle, RotateCcw, Terminal, ChevronDown, ChevronRight, ClipboardCopy, Download } from 'lucide-react';
 import { useExecutionStore } from '../stores/executionStore';
 import { useExecutionWebSocket } from '../api/ws';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -153,6 +153,77 @@ export function ExecutionViewer() {
           )}
         </div>
       </div>
+
+      <ConsolePanel />
+    </div>
+  );
+}
+
+function ConsolePanel() {
+  const { t } = useTranslation();
+  const logEntries = useExecutionStore(s => s.logEntries);
+  const [expanded, setExpanded] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (expanded && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logEntries.length, expanded]);
+
+  const logText = () =>
+    logEntries.map(e => `${e.timestamp} [${e.level}] ${e.message}`).join('\n');
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(logText());
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([logText()], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wintest-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="console-panel">
+      <div className="console-header">
+        <button className="console-toggle" onClick={() => setExpanded(!expanded)}>
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <Terminal size={14} />
+          {t('execution.console')}
+          {logEntries.length > 0 && <span className="console-count">{logEntries.length}</span>}
+        </button>
+        {expanded && logEntries.length > 0 && (
+          <div className="console-actions">
+            <button className="btn-icon" onClick={handleCopy} title={t('execution.copyLogs')}>
+              <ClipboardCopy size={14} />
+            </button>
+            <button className="btn-icon" onClick={handleDownload} title={t('execution.downloadLogs')}>
+              <Download size={14} />
+            </button>
+          </div>
+        )}
+      </div>
+      {expanded && (
+        <div className="console-output">
+          {logEntries.length === 0 ? (
+            <p className="text-muted">{t('execution.noLogs')}</p>
+          ) : (
+            logEntries.map((entry, i) => (
+              <div key={i} className={`console-line console-${entry.level.toLowerCase()}`}>
+                <span className="console-time">{entry.timestamp}</span>
+                <span className="console-level">{entry.level}</span>
+                <span className="console-msg">{entry.message}</span>
+              </div>
+            ))
+          )}
+          <div ref={bottomRef} />
+        </div>
+      )}
     </div>
   );
 }

@@ -132,6 +132,8 @@ export interface WsMessage {
   step_results?: StepResultData[];
   source_file?: string;
   run_type?: string;
+  level?: string;
+  timestamp?: string;
 }
 
 export interface TestSuite {
