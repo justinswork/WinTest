@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, HelpCircle, Copy } from 'lucide-react';
+import { X, HelpCircle, Copy, FolderOpen } from 'lucide-react';
 import type { Step, FieldInfo } from '../../api/types';
 import { useTestStore } from '../../stores/testStore';
+import { fileApi } from '../../api/client';
 import { StepPicker } from './StepPicker';
 
 interface Props {
@@ -74,12 +75,23 @@ const FIELD_RENDERERS: Record<string, FieldRenderer> = {
     />
   ),
   app_path: (step, _field, update, t) => (
-    <input
-      className="input"
-      placeholder={t('stepForm.appPathPlaceholder')}
-      value={step.app_path ?? ''}
-      onChange={e => update('app_path', e.target.value || null)}
-    />
+    <div style={{ display: 'flex', gap: '0.3rem' }}>
+      <input
+        className="input"
+        style={{ flex: 1 }}
+        placeholder={t('stepForm.appPathPlaceholder')}
+        value={step.app_path ?? ''}
+        onChange={e => update('app_path', e.target.value || null)}
+      />
+      <button
+        className="btn-icon"
+        onClick={async () => { try { update('app_path', await fileApi.pickExecutable()); } catch { /* cancelled */ } }}
+        title={t('stepForm.browse')}
+        type="button"
+      >
+        <FolderOpen size={16} />
+      </button>
+    </div>
   ),
   app_title: (step, _field, update, t) => (
     <input

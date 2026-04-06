@@ -30,6 +30,17 @@ export const executionApi = {
   cancel: () => api.post('/execution/cancel').then(r => r.data),
 };
 
+export const builderApi = {
+  start: () => api.post('/builder/start').then(r => r.data),
+  step: (step: Record<string, unknown>) => api.post('/builder/step', step).then(r => r.data),
+  stop: () => api.post('/builder/stop').then(r => r.data),
+  screenshot: () => api.get('/builder/screenshot').then(r => r.data),
+};
+
+export const fileApi = {
+  pickExecutable: () => api.post<{ path: string }>('/files/pick-executable').then(r => r.data.path),
+};
+
 export const reportApi = {
   list: () => api.get<ReportSummary[]>('/reports').then(r => r.data),
   get: (id: string) => api.get<ReportData>(`/reports/${id}`).then(r => r.data),

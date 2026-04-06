@@ -1237,6 +1237,134 @@ select.input {
   gap: 0.5rem;
 }
 
+/* ── Test Builder ────────────────────────────────────────── */
+.builder-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  min-height: 400px;
+}
+
+.builder-steps {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.builder-step-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  transition: background 0.1s;
+}
+
+.builder-step-item:hover {
+  background: var(--bg-surface);
+}
+
+.builder-step-item.selected {
+  background: var(--bg-surface);
+  border-left: 3px solid var(--primary);
+}
+
+.builder-step-item .step-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.builder-screenshot {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.builder-screenshot .screenshot-img {
+  width: 100%;
+  display: block;
+}
+
+.builder-confirm-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  background: #fefce8;
+  border-top: 2px solid #eab308;
+  font-size: 0.85rem;
+}
+
+.builder-confirm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.builder-confirm-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.builder-step-detail {
+  padding: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.builder-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.builder-detail-row {
+  margin-bottom: 0.25rem;
+}
+
+.builder-detail-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.builder-step-error {
+  color: #ef4444;
+}
+
+.builder-model-response {
+  font-size: 0.75rem;
+  background: var(--bg-surface);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  word-break: break-all;
+}
+
+.builder-input-bar {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.builder-desc-input {
+  width: 160px;
+  font-size: 0.8rem;
+}
+
 /* ── Report list ─────────────────────────────────────────── */
 .report-list h2 {
   margin-bottom: 1rem;

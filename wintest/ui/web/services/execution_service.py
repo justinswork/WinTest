@@ -11,6 +11,10 @@ from ....core.vision import VisionModel
 from ....core.screen import ScreenCapture
 from ....core.actions import ActionExecutor
 from ....core.agent import Agent
+from ....core.app_manager import ApplicationManager, AppConfig
+from ....core.recovery import RecoveryStrategy
+from ....steps import registry
+from ....tasks.schema import Step, StepResult
 from ....tasks.loader import load_test
 from ....tasks.runner import TestRunner
 from ....tasks.test_suite_loader import load_test_suite
@@ -383,3 +387,122 @@ def _run_test_suite(suite_file: str, run_id: str, app_state: AppState, loop: asy
             app_state.last_run = app_state.current_run
             if app_state.current_run.status == "running":
                 app_state.current_run.status = "failed"
+
+
+# ── Builder: single-step execution ──────────────────────────────────
+
+
+class BuilderState:
+    """Holds state for the interactive test builder session."""
+
+    def __init__(self, agent: Agent, settings):
+        self.agent = agent
+        self.settings = settings
+        self.app_manager: ApplicationManager | None = None
+        self.recovery: RecoveryStrategy | None = None
+
+
+def _ensure_model(app_state: AppState) -> VisionModel:
+    """Ensure the vision model is loaded, loading it synchronously if needed."""
+    if app_state.vision_model is None:
+        app_state.model_status = "loading"
+        vision = VisionModel(model_settings=app_state.settings.model)
+        vision.load()
+        app_state.vision_model = vision
+        app_state.model_status = "loaded"
+    return app_state.vision_model
+
+
+def start_builder(app_state: AppState) -> BuilderState:
+    """Initialize a builder session."""
+    vision = _ensure_model(app_state)
+    screen = ScreenCapture(coordinate_scale=app_state.settings.action.coordinate_scale)
+    actions = ActionExecutor(action_settings=app_state.settings.action)
+    agent = Agent(vision, screen, actions)
+    agent.report_dir = None
+    return BuilderState(agent, app_state.settings)
+
+
+def execute_builder_step(step: Step, builder: BuilderState) -> dict:
+    """Execute a single step in the builder and return the result with screenshot."""
+    defn = registry.get(step.action)
+    if defn is None:
+        return {
+            "passed": False,
+            "error": f"Unknown step type: {step.action}",
+            "screenshot_base64": None,
+        }
+
+    # Handle runner-level steps
+    if defn.is_runner_step:
+        runner_ctx = {
+            "effective_settings": builder.settings,
+            "agent": builder.agent,
+            "app_manager": builder.app_manager,
+            "recovery": builder.recovery,
+            "variables": None,
+            "loop_counters": {},
+            "current_step_index": 0,
+        }
+        try:
+            result = defn.execute(step, runner_ctx)
+        except Exception as e:
+            result = StepResult(step=step, passed=False, error=str(e))
+        builder.app_manager = runner_ctx.get("app_manager")
+        builder.recovery = runner_ctx.get("recovery")
+    else:
+        if builder.app_manager:
+            builder.app_manager.focus()
+        step_timeout = step.timeout or builder.settings.timeout.step_timeout
+        result = builder.agent.execute_step(step, step_timeout=step_timeout)
+
+    # Capture a screenshot after execution, with click annotation if applicable
+    screenshot_b64 = None
+    try:
+        import io
+        from PIL import ImageDraw
+        screenshot = builder.agent.screen.capture()
+
+        # Draw a prominent click marker if we have coordinates
+        if result.coordinates:
+            img = screenshot.copy()
+            x, y = result.coordinates
+            draw = ImageDraw.Draw(img)
+            r = 25
+            # Outer circle
+            draw.ellipse([(x - r, y - r), (x + r, y + r)],
+                         outline="red", width=3)
+            # Inner crosshair
+            draw.line([(x - r, y), (x + r, y)], fill="red", width=2)
+            draw.line([(x, y - r), (x, y + r)], fill="red", width=2)
+            # Arrow pointing to the spot (line from above)
+            arrow_len = 60
+            draw.line([(x, y - r - arrow_len), (x, y - r)],
+                      fill="red", width=3)
+            # Arrowhead
+            draw.polygon([
+                (x, y - r),
+                (x - 8, y - r - 12),
+                (x + 8, y - r - 12),
+            ], fill="red")
+            screenshot = img
+
+        buf = io.BytesIO()
+        screenshot.save(buf, format="PNG")
+        screenshot_b64 = base64.b64encode(buf.getvalue()).decode()
+    except Exception:
+        pass
+
+    # For click-based steps, mark as "needs_confirmation" so the UI
+    # can show accept/retry buttons
+    needs_confirmation = result.coordinates is not None
+
+    return {
+        "passed": result.passed,
+        "error": result.error,
+        "coordinates": list(result.coordinates) if result.coordinates else None,
+        "model_response": result.model_response,
+        "duration_seconds": round(result.duration_seconds, 2),
+        "screenshot_base64": screenshot_b64,
+        "needs_confirmation": needs_confirmation,
+    }

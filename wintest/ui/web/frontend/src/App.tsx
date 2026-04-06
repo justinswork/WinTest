@@ -9,6 +9,7 @@ import { TestSuiteViewer } from './pages/TestSuiteViewer';
 import { ExecutionViewer } from './pages/ExecutionViewer';
 import { ReportList } from './pages/ReportList';
 import { ReportViewer } from './pages/ReportViewer';
+import { TestBuilder } from './pages/TestBuilder';
 import { Trends } from './pages/Trends';
 import { Settings } from './pages/Settings';
 import { Help } from './pages/Help';
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
       { path: '/test-suites/new', element: <TestSuiteEditor /> },
       { path: '/test-suites/:filename', element: <TestSuiteViewer /> },
       { path: '/test-suites/:filename/edit', element: <TestSuiteEditor /> },
+      { path: '/builder', element: <TestBuilder /> },
       { path: '/execution', element: <ExecutionViewer /> },
       { path: '/reports', element: <ReportList /> },
       { path: '/reports/:reportId', element: <ReportViewer /> },
