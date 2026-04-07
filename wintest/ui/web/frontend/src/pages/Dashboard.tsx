@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, XCircle, Trash2 } from 'lucide-react';
+import { ArrowRight, XCircle, Trash2, Settings } from 'lucide-react';
 import { useExecutionStore } from '../stores/executionStore';
 import { useExecutionWebSocket } from '../api/ws';
-import { reportApi } from '../api/client';
+import { reportApi, settingsApi } from '../api/client';
 import { StatusBadge } from '../components/common/StatusBadge';
 import type { ReportSummary } from '../api/types';
 
@@ -21,12 +21,14 @@ export function Dashboard() {
   const navigate = useNavigate();
   const { modelStatus, loadModel, fetchStatus, handleWsMessage, cancelRun, status, testName, currentStep, totalSteps, stepResults, currentLabel, error } = useExecutionStore();
   const [reports, setReports] = useState<ReportSummary[]>([]);
+  const [modelName, setModelName] = useState<string>('');
 
   useExecutionWebSocket(handleWsMessage);
 
   useEffect(() => {
     fetchStatus();
     reportApi.list().then(setReports);
+    settingsApi.getModel().then(data => setModelName(data.model_path));
   }, [fetchStatus]);
 
   const handleDeleteReport = async (e: React.MouseEvent, reportId: string) => {
@@ -56,11 +58,23 @@ export function Dashboard() {
           <h2>{t('dashboard.modelStatus')}</h2>
         </div>
         <div className="model-status-card">
-          <span className={`model-indicator model-${modelStatus}`} />
-          <span>{modelStatus === 'loaded' ? t('dashboard.modelLoaded') : modelStatus === 'loading' ? t('dashboard.modelLoading') : t('dashboard.modelNotLoaded')}</span>
-          {modelStatus === 'not_loaded' && (
-            <button className="btn btn-secondary" onClick={loadModel}>{t('dashboard.preloadModel')}</button>
-          )}
+          <div className="model-status-info">
+            <div className="model-status-row">
+              <span className="model-status-label">{t('dashboard.statusLabel')}</span>
+              <span className={`model-indicator model-${modelStatus}`} />
+              <span>{modelStatus === 'loaded' ? t('dashboard.modelLoaded') : modelStatus === 'loading' ? t('dashboard.modelLoading') : t('dashboard.modelNotLoaded')}</span>
+              {modelStatus === 'not_loaded' && (
+                <button className="btn btn-secondary btn-sm" onClick={loadModel}>{t('dashboard.preloadModel')}</button>
+              )}
+            </div>
+            <div className="model-status-row">
+              <span className="model-status-label">{t('dashboard.modelLabel')}</span>
+              <span>{modelName || '—'}</span>
+            </div>
+          </div>
+          <button className="btn-icon" onClick={() => navigate('/settings')} title={t('dashboard.changeModel')}>
+            <Settings size={16} />
+          </button>
         </div>
       </div>
 

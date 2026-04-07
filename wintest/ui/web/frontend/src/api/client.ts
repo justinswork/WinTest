@@ -41,6 +41,11 @@ export const fileApi = {
   pickExecutable: () => api.post<{ path: string }>('/files/pick-executable').then(r => r.data.path),
 };
 
+export const settingsApi = {
+  getModel: () => api.get('/settings/model').then(r => r.data),
+  setModel: (model_path: string) => api.put('/settings/model', { model_path }).then(r => r.data),
+};
+
 export const reportApi = {
   list: () => api.get<ReportSummary[]>('/reports').then(r => r.data),
   get: (id: string) => api.get<ReportData>(`/reports/${id}`).then(r => r.data),

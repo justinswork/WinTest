@@ -1,9 +1,19 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useThemeStore } from '../stores/themeStore';
+import { settingsApi } from '../api/client';
+import { showToast } from '../components/common/Toast';
 import type { ReactNode } from 'react';
 
 type ThemePreference = 'light' | 'dark' | 'system';
+
+interface ModelInfo {
+  id: string;
+  name: string;
+  description: string;
+  size: string;
+}
 
 const THEME_OPTIONS: { value: ThemePreference; icon: ReactNode; labelKey: string; descKey: string }[] = [
   { value: 'light', icon: <Sun size={20} />, labelKey: 'settings.light', descKey: 'settings.lightDescription' },
@@ -18,16 +28,94 @@ const AVAILABLE_LANGUAGES: { code: string; name: string }[] = [
 export function Settings() {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useThemeStore();
+  const [currentModel, setCurrentModel] = useState<string>('');
+  const [modelStatus, setModelStatus] = useState<string>('');
+  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [customModel, setCustomModel] = useState('');
+
+  useEffect(() => {
+    settingsApi.getModel().then(data => {
+      setCurrentModel(data.model_path);
+      setModelStatus(data.model_status);
+      setAvailableModels(data.available_models);
+    });
+  }, []);
 
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
     localStorage.setItem('wintest-language', lang);
   };
 
+  const handleModelChange = async (modelPath: string) => {
+    try {
+      const result = await settingsApi.setModel(modelPath);
+      setCurrentModel(result.model_path);
+      setModelStatus(result.model_status);
+      if (result.needs_reload) {
+        showToast(t('settings.modelChanged'));
+      }
+    } catch {
+      showToast(t('settings.modelChangeFailed'), 'error');
+    }
+  };
+
+  const handleCustomModelApply = () => {
+    if (customModel.trim()) {
+      handleModelChange(customModel.trim());
+      setCustomModel('');
+    }
+  };
+
   return (
     <div className="settings-page">
       <div className="section-header">
         <h2>{t('settings.title')}</h2>
+      </div>
+
+      <div className="card">
+        <h3>{t('settings.visionModel')}</h3>
+        <p className="text-muted">{t('settings.visionModelDescription')}</p>
+
+        <div className="model-options">
+          {availableModels.map(model => (
+            <div
+              key={model.id}
+              className={`model-option${currentModel === model.id ? ' active' : ''}`}
+              onClick={() => handleModelChange(model.id)}
+            >
+              <div className="model-option-header">
+                <strong>{model.name}</strong>
+                <span className="text-muted">{model.size}</span>
+              </div>
+              <p className="text-muted">{model.description}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="model-custom">
+          <p className="text-muted" style={{ marginBottom: '0.4rem', fontSize: '0.8rem' }}>
+            {t('settings.customModelHint')}
+          </p>
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <input
+              className="input"
+              placeholder={t('settings.customModelPlaceholder')}
+              value={customModel}
+              onChange={e => setCustomModel(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleCustomModelApply(); }}
+              style={{ flex: 1 }}
+            />
+            <button className="btn btn-secondary btn-sm" onClick={handleCustomModelApply}>
+              {t('settings.apply')}
+            </button>
+          </div>
+        </div>
+
+        {currentModel && (
+          <p className="text-muted" style={{ marginTop: '0.75rem', fontSize: '0.8rem' }}>
+            {t('settings.currentModel')}: <code>{currentModel}</code> ({modelStatus})
+          </p>
+        )}
       </div>
 
       <div className="card">
