@@ -42,9 +42,9 @@ class TestSettingsDefaults:
 
     def test_model_defaults(self):
         s = Settings()
-        assert s.model.model_path == "OpenGVLab/InternVL2-8B"
+        assert s.model.model_path == "showlab/ShowUI-2B"
         assert s.model.load_in_4bit is True
-        assert s.model.input_size == 448
+        assert s.model.max_new_tokens == 128
 
 
 class TestSettingsLoad:
@@ -65,7 +65,7 @@ class TestSettingsLoad:
         config.write_text("model:\n  max_new_tokens: 100\n")
         s = Settings.load(str(config))
         assert s.model.max_new_tokens == 100
-        assert s.model.model_path == "OpenGVLab/InternVL2-8B"  # unchanged
+        assert s.model.model_path == "showlab/ShowUI-2B"  # unchanged
 
     def test_unknown_keys_ignored(self, tmp_path):
         config = tmp_path / "config.yaml"

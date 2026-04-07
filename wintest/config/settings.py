@@ -10,13 +10,11 @@ import yaml
 
 @dataclass
 class ModelSettings:
-    model_path: str = "OpenGVLab/InternVL2-8B"
+    model_path: str = "showlab/ShowUI-2B"
     load_in_4bit: bool = True
-    bnb_4bit_compute_dtype: str = "float16"
     bnb_4bit_quant_type: str = "nf4"
     bnb_4bit_use_double_quant: bool = True
-    max_new_tokens: int = 200
-    input_size: int = 448
+    max_new_tokens: int = 128
 
 
 @dataclass

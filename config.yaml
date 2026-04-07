@@ -3,8 +3,8 @@
 # Task YAML settings override these.
 
 model:
-  model_path: "OpenGVLab/InternVL2-8B"
-  max_new_tokens: 200
+  model_path: "showlab/ShowUI-2B"
+  max_new_tokens: 128
 
 action:
   action_delay: 0.5

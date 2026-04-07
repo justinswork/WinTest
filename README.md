@@ -2,7 +2,7 @@
 
 # wintest
 
-AI-powered Windows UI testing tool using [InternVL2-8B](https://huggingface.co/OpenGVLab/InternVL2-8B). Define test tasks in simple YAML files, point them at any desktop application, and let an AI agent execute them autonomously — taking screenshots, finding UI elements, clicking, typing, scrolling, and verifying results.
+AI-powered Windows UI testing tool using [ShowUI-2B](https://huggingface.co/OpenGVLab/ShowUI-2B). Define test tasks in simple YAML files, point them at any desktop application, and let an AI agent execute them autonomously — taking screenshots, finding UI elements, clicking, typing, scrolling, and verifying results.
 
 Think of it as Selenium/Playwright, but for **any desktop application**, powered by visual AI instead of DOM selectors.
 
@@ -12,7 +12,7 @@ Think of it as Selenium/Playwright, but for **any desktop application**, powered
 
 1. You define a test task in YAML — what app to launch, what steps to perform
 2. wintest launches the application and captures a screenshot
-3. InternVL2-8B (a vision-language model running locally on your GPU) analyzes the screenshot and locates UI elements
+3. ShowUI-2B (a vision-language model running locally on your GPU) analyzes the screenshot and locates UI elements
 4. The agent executes actions (click, type, scroll, etc.) and verifies expected results
 5. A detailed report is generated with annotated screenshots of every step
 
@@ -39,7 +39,7 @@ No pixel matching or template matching — the model uses learned visual underst
 |-----------|---------|-------------|
 | **GPU** | NVIDIA GPU with 8 GB VRAM | NVIDIA GPU with 12+ GB VRAM |
 | **RAM** | 16 GB | 32 GB |
-| **Disk** | ~20 GB free (model weights) | ~20 GB free |
+| **Disk** | ~5 GB free (model weights) | ~10 GB free |
 | **CUDA** | CUDA 12.4+ | CUDA 12.4+ |
 
 The model runs in 4-bit quantization (NF4) to fit within consumer GPU memory. An RTX 3060 (12 GB) or equivalent is the baseline tested configuration.
@@ -74,7 +74,7 @@ npm install
 npm run build
 ```
 
-On first run, the InternVL2-8B model weights (~16 GB) will be downloaded automatically from Hugging Face.
+On first run, the ShowUI-2B model weights (~4 GB) will be downloaded automatically from Hugging Face.
 
 ---
 
@@ -141,5 +141,5 @@ settings:
 ## Known Limitations
 
 - Single-monitor only (captures the primary display)
-- First run requires a large model download (~16 GB)
+- First run requires a model download (~4 GB)
 - One task execution at a time (GPU is single-threaded)
