@@ -43,8 +43,12 @@ def cli(ctx, config, workspace_dir, verbose):
     ctx.ensure_object(dict)
 
     workspace.init(workspace_dir)
-    config_path = config or str(workspace.config_file())
-    settings = Settings.load(config_path)
+    if config:
+        settings = Settings.load(config)
+    elif workspace.is_configured():
+        settings = Settings.load(str(workspace.config_file()))
+    else:
+        settings = Settings()
     if verbose:
         settings.logging.level = "DEBUG"
 
