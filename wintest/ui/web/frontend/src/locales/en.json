@@ -141,6 +141,7 @@
   "settings.reportsDir": "Reports",
   "settings.configDir": "Config",
   "settings.workspaceHint": "Click the edit icon to change the workspace, or use: wintest --workspace <path> web",
+  "settings.workspacePlaceholder": "Choose a folder for your workspace...",
   "settings.browseFolder": "Browse for folder",
   "settings.workspaceChanged": "Workspace changed. Tests, suites, and reports now use the new location.",
   "settings.visionModel": "Vision Model",

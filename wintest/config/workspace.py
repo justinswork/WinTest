@@ -10,14 +10,22 @@ from pathlib import Path
 
 _workspace_root: Path | None = None
 
-# Stored next to the executable / project root — not inside the workspace
-_WORKSPACE_PREFS_FILE = "wintest_workspace.json"
+
+def _prefs_path() -> Path:
+    """Get the path to the workspace preferences file in LOCALAPPDATA."""
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        prefs_dir = Path(local_app_data) / "wintest"
+    else:
+        prefs_dir = Path.home() / ".wintest"
+    prefs_dir.mkdir(parents=True, exist_ok=True)
+    return prefs_dir / "workspace.json"
 
 
 def _load_saved_root() -> str | None:
     """Load the workspace root from the preferences file, if it exists."""
     try:
-        with open(_WORKSPACE_PREFS_FILE) as f:
+        with open(_prefs_path()) as f:
             data = json.load(f)
         return data.get("workspace_root")
     except (FileNotFoundError, json.JSONDecodeError):
@@ -26,18 +34,20 @@ def _load_saved_root() -> str | None:
 
 def _save_root(root: str) -> None:
     """Save the workspace root to the preferences file."""
-    with open(_WORKSPACE_PREFS_FILE, "w") as f:
+    with open(_prefs_path(), "w") as f:
         json.dump({"workspace_root": root}, f, indent=2)
 
 
 def init(root: str | None = None) -> None:
     """Initialize the workspace root. Call once at startup.
 
-    If no root is provided and none is saved, workspace stays unset.
-    Services should check is_configured() before using paths.
+    If root is provided via CLI, it's used as a session override (not saved).
+    If no root is provided, the saved preference is loaded.
+    If nothing is saved, workspace stays unset.
     """
     global _workspace_root
     if root:
+        # CLI override — use for this session but don't save
         _workspace_root = Path(root).resolve()
         _ensure_dirs()
     elif saved := _load_saved_root():
