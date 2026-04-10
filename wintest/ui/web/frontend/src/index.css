@@ -1694,6 +1694,34 @@ select.input {
   max-width: 600px;
 }
 
+.workspace-paths {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.workspace-path-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.workspace-path-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.workspace-path-value {
+  font-size: 0.8rem;
+  background: var(--bg-surface);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius);
+  word-break: break-all;
+}
+
 .model-options {
   display: flex;
   flex-direction: column;

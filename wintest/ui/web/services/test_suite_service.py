@@ -6,15 +6,13 @@ from pathlib import Path
 import yaml
 
 from ....tasks.test_suite_loader import load_test_suite
+from ....config import workspace
 from ..models import TestSuiteModel, TestSuiteListItem
-
-SUITES_DIR = "test_suites"
-TESTS_DIR = "tests"
 
 
 def list_suites() -> list[TestSuiteListItem]:
     """List all suite YAML files in the suites directory."""
-    suites_dir = Path(SUITES_DIR)
+    suites_dir = workspace.suites_dir()
     if not suites_dir.exists():
         return []
 
@@ -73,7 +71,7 @@ def save_suite(suite: TestSuiteModel, filename: str | None = None) -> str:
     if suite.settings:
         data["settings"] = suite.settings
 
-    suites_dir = Path(SUITES_DIR)
+    suites_dir = workspace.suites_dir()
     suites_dir.mkdir(exist_ok=True)
     path = suites_dir / filename
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -94,7 +92,7 @@ def delete_suite(filename: str) -> None:
 
 def _resolve_path(filename: str) -> Path:
     """Resolve a filename to a path in the suites directory."""
-    path = Path(SUITES_DIR) / filename
+    path = workspace.suites_dir() / filename
     if not path.exists():
         raise FileNotFoundError(f"Suite file not found: {filename}")
     return path

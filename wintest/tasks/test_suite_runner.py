@@ -8,10 +8,9 @@ from .loader import load_test
 from .runner import TestRunner
 from ..core.power import prevent_sleep, allow_sleep
 from ..config.settings import Settings
+from ..config import workspace
 
 logger = logging.getLogger(__name__)
-
-TESTS_DIR = "tests"
 
 
 class TestSuiteRunner:
@@ -70,7 +69,7 @@ class TestSuiteRunner:
                 logger.info("Suite run cancelled by user.")
                 break
 
-            full_path = os.path.join(TESTS_DIR, test_path)
+            full_path = str(workspace.tests_dir() / test_path)
 
             try:
                 test = load_test(full_path, settings=self.settings)

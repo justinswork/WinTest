@@ -39,3 +39,30 @@ async def pick_executable():
     if result[0]:
         return {"path": result[0]}
     raise HTTPException(status_code=204, detail="No file selected")
+
+
+@router.post("/pick-folder")
+async def pick_folder():
+    """Open a native Windows folder dialog. Returns the path."""
+    result = [None]
+
+    def _pick():
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            path = filedialog.askdirectory(title="Select Folder")
+            root.destroy()
+            result[0] = path if path else None
+        except Exception:
+            result[0] = None
+
+    thread = threading.Thread(target=_pick)
+    thread.start()
+    thread.join(timeout=60)
+
+    if result[0]:
+        return {"path": result[0]}
+    raise HTTPException(status_code=204, detail="No folder selected")

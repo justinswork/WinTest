@@ -6,13 +6,13 @@ from pathlib import Path
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-router = APIRouter()
+from ....config import workspace
 
-SAVED_APPS_FILE = "saved_apps.json"
+router = APIRouter()
 
 
 def _load() -> list[str]:
-    path = Path(SAVED_APPS_FILE)
+    path = workspace.saved_apps_file()
     if not path.exists():
         return []
     try:
@@ -24,7 +24,7 @@ def _load() -> list[str]:
 
 
 def _save(apps: list[str]) -> None:
-    with open(SAVED_APPS_FILE, "w") as f:
+    with open(workspace.saved_apps_file(), "w") as f:
         json.dump(apps, f, indent=2)
 
 

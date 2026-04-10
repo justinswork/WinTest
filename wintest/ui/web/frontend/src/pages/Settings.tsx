@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Monitor, Pencil, Check, X, FolderOpen } from 'lucide-react';
 import { useThemeStore } from '../stores/themeStore';
-import { settingsApi } from '../api/client';
+import { settingsApi, fileApi } from '../api/client';
 import { showToast } from '../components/common/Toast';
 import type { ReactNode } from 'react';
 
@@ -32,6 +32,9 @@ export function Settings() {
   const [modelStatus, setModelStatus] = useState<string>('');
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
   const [customModel, setCustomModel] = useState('');
+  const [workspacePaths, setWorkspacePaths] = useState<Record<string, string>>({});
+  const [editingWorkspace, setEditingWorkspace] = useState(false);
+  const [workspaceInput, setWorkspaceInput] = useState('');
 
   useEffect(() => {
     settingsApi.getModel().then(data => {
@@ -39,6 +42,7 @@ export function Settings() {
       setModelStatus(data.model_status);
       setAvailableModels(data.available_models);
     });
+    settingsApi.getWorkspace().then(setWorkspacePaths);
   }, []);
 
   const handleLanguageChange = (lang: string) => {
@@ -70,6 +74,78 @@ export function Settings() {
     <div className="settings-page">
       <div className="section-header">
         <h2>{t('settings.title')}</h2>
+      </div>
+
+      <div className="card">
+        <h3>{t('settings.workspace')}</h3>
+        <p className="text-muted">{t('settings.workspaceDescription')}</p>
+        {workspacePaths.root && (
+          <div className="workspace-paths">
+            <div className="workspace-path-row">
+              <span className="workspace-path-label">{t('settings.workspaceRoot')}</span>
+              {editingWorkspace ? (
+                <>
+                  <input
+                    className="input flex-1"
+                    value={workspaceInput}
+                    onChange={e => setWorkspaceInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        settingsApi.setWorkspace(workspaceInput).then(data => {
+                          setWorkspacePaths(data);
+                          setEditingWorkspace(false);
+                          showToast(t('settings.workspaceChanged'));
+                        });
+                      }
+                      if (e.key === 'Escape') setEditingWorkspace(false);
+                    }}
+                    autoFocus
+                  />
+                  <button className="btn-icon" onClick={async () => {
+                    try {
+                      const path = await fileApi.pickFolder();
+                      setWorkspaceInput(path);
+                    } catch { /* cancelled */ }
+                  }} title={t('settings.browseFolder')}><FolderOpen size={14} /></button>
+                  <button className="btn-icon" onClick={() => {
+                    settingsApi.setWorkspace(workspaceInput).then(data => {
+                      setWorkspacePaths(data);
+                      setEditingWorkspace(false);
+                      showToast(t('settings.workspaceChanged'));
+                    });
+                  }}><Check size={14} /></button>
+                  <button className="btn-icon" onClick={() => setEditingWorkspace(false)}><X size={14} /></button>
+                </>
+              ) : (
+                <>
+                  <code className="workspace-path-value">{workspacePaths.root}</code>
+                  <button className="btn-icon" onClick={() => { setWorkspaceInput(workspacePaths.root); setEditingWorkspace(true); }} title={t('common.edit')}>
+                    <Pencil size={14} />
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="workspace-path-row">
+              <span className="workspace-path-label">{t('settings.testsDir')}</span>
+              <code className="workspace-path-value">{workspacePaths.tests_dir}</code>
+            </div>
+            <div className="workspace-path-row">
+              <span className="workspace-path-label">{t('settings.suitesDir')}</span>
+              <code className="workspace-path-value">{workspacePaths.suites_dir}</code>
+            </div>
+            <div className="workspace-path-row">
+              <span className="workspace-path-label">{t('settings.reportsDir')}</span>
+              <code className="workspace-path-value">{workspacePaths.reports_dir}</code>
+            </div>
+            <div className="workspace-path-row">
+              <span className="workspace-path-label">{t('settings.configDir')}</span>
+              <code className="workspace-path-value">{workspacePaths.config_dir}</code>
+            </div>
+          </div>
+        )}
+        <p className="text-muted" style={{ marginTop: '0.5rem', fontSize: '0.78rem' }}>
+          {t('settings.workspaceHint')}
+        </p>
       </div>
 
       <div className="card">

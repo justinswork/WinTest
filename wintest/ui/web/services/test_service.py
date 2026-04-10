@@ -8,14 +8,13 @@ import yaml
 from ....tasks.loader import load_test
 from ....tasks.validator import validate_test
 from ....steps import registry
+from ....config import workspace
 from ..models import TestModel, TestListItem, StepModel, ValidationResult, StepInfo, FieldInfo
-
-TESTS_DIR = "tests"
 
 
 def list_tests(settings=None) -> list[TestListItem]:
     """List all test YAML files in the tests directory, including subfolders."""
-    tests_dir = Path(TESTS_DIR)
+    tests_dir = workspace.tests_dir()
     if not tests_dir.exists():
         return []
 
@@ -143,7 +142,7 @@ def save_test(test: TestModel, filename: str | None = None) -> str:
     if test.settings:
         data["settings"] = test.settings
 
-    tests_dir = Path(TESTS_DIR)
+    tests_dir = workspace.tests_dir()
     tests_dir.mkdir(exist_ok=True)
     path = tests_dir / filename
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -196,7 +195,7 @@ def get_step_types() -> list[StepInfo]:
 
 def _resolve_path(filename: str) -> Path:
     """Resolve a filename to a path in the tests directory."""
-    path = Path(TESTS_DIR) / filename
+    path = workspace.tests_dir() / filename
     if not path.exists():
         raise FileNotFoundError(f"Test file not found: {filename}")
     return path

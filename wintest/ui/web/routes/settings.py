@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from ....config import workspace
 from .. import state as state_module
 
 router = APIRouter()
@@ -31,6 +32,35 @@ AVAILABLE_MODELS = [
 
 class ModelSettingRequest(BaseModel):
     model_path: str
+
+
+class WorkspaceRequest(BaseModel):
+    root: str
+
+
+@router.get("/workspace")
+async def get_workspace():
+    """Get the current workspace configuration."""
+    return {
+        "root": str(workspace.root()),
+        "tests_dir": str(workspace.tests_dir()),
+        "suites_dir": str(workspace.suites_dir()),
+        "reports_dir": str(workspace.reports_dir()),
+        "config_dir": str(workspace.config_dir()),
+    }
+
+
+@router.put("/workspace")
+async def set_workspace(request: WorkspaceRequest):
+    """Change the workspace root directory."""
+    workspace.set_root(request.root)
+    return {
+        "root": str(workspace.root()),
+        "tests_dir": str(workspace.tests_dir()),
+        "suites_dir": str(workspace.suites_dir()),
+        "reports_dir": str(workspace.reports_dir()),
+        "config_dir": str(workspace.config_dir()),
+    }
 
 
 @router.get("/model")

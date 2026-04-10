@@ -15,6 +15,7 @@ from ....core.app_manager import ApplicationManager, AppConfig
 from ....core.recovery import RecoveryStrategy
 from ....steps import registry
 from ....tasks.schema import Step, StepResult
+from ....config import workspace
 from ....tasks.loader import load_test
 from ....tasks.runner import TestRunner
 from ....tasks.test_suite_loader import load_test_suite
@@ -114,7 +115,7 @@ def start_run(test_file: str, app_state: AppState) -> dict:
     if app_state.current_run and app_state.current_run.status == "running":
         return None  # caller should return 409
 
-    path = os.path.join("tests", test_file)
+    path = str(workspace.tests_dir() / test_file)
     test = load_test(path, settings=app_state.settings)
 
     run_id = str(uuid.uuid4())
@@ -166,7 +167,7 @@ def _run_test(test_file: str, run_id: str, app_state: AppState, loop: asyncio.Ab
         else:
             vision = app_state.vision_model
 
-        path = os.path.join("tests", test_file)
+        path = str(workspace.tests_dir() / test_file)
         test = load_test(path, settings=app_state.settings)
 
         screen = ScreenCapture(coordinate_scale=app_state.settings.action.coordinate_scale)
@@ -260,7 +261,7 @@ def start_test_suite_run(suite_file: str, app_state: AppState) -> dict:
     if app_state.current_run and app_state.current_run.status == "running":
         return None
 
-    path = os.path.join("test_suites", suite_file)
+    path = str(workspace.suites_dir() / suite_file)
     suite = load_test_suite(path)
 
     run_id = str(uuid.uuid4())
@@ -311,7 +312,7 @@ def _run_test_suite(suite_file: str, run_id: str, app_state: AppState, loop: asy
         else:
             vision = app_state.vision_model
 
-        path = os.path.join("test_suites", suite_file)
+        path = str(workspace.suites_dir() / suite_file)
         suite = load_test_suite(path)
 
         screen = ScreenCapture(coordinate_scale=app_state.settings.action.coordinate_scale)

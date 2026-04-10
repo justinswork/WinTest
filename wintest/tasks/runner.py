@@ -11,6 +11,7 @@ from ..steps import registry
 from ..core.agent import Agent
 from ..core.power import prevent_sleep, allow_sleep
 from ..config.settings import Settings
+from ..config import workspace
 from ..reporting.reporter import ReportGenerator
 
 logger = logging.getLogger(__name__)
@@ -196,7 +197,7 @@ class TestRunner:
         """Create a timestamped report directory under reports/."""
         safe_name = re.sub(r"[^\w\-]", "_", test_name)
         timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        report_dir = os.path.join("reports", f"{timestamp}_{safe_name}")
+        report_dir = str(workspace.reports_dir() / f"{timestamp}_{safe_name}")
         os.makedirs(report_dir, exist_ok=True)
         return report_dir
 

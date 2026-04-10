@@ -11,6 +11,7 @@ import click
 
 from ..config.logging import setup_logging
 from ..config.settings import Settings
+from ..config import workspace
 from ..steps import registry
 from . import console
 
@@ -18,9 +19,16 @@ from . import console
 @click.group()
 @click.option(
     "--config", "-c",
-    default="config.yaml",
+    default=None,
     type=click.Path(),
-    help="Path to global config file (default: config.yaml).",
+    help="Path to config file (default: <workspace>/config/config.yaml).",
+)
+@click.option(
+    "--workspace", "-w",
+    "workspace_dir",
+    default=None,
+    type=click.Path(),
+    help="Workspace directory (default: current directory).",
 )
 @click.option(
     "--verbose", "-v",
@@ -29,12 +37,14 @@ from . import console
     help="Enable verbose (DEBUG) logging.",
 )
 @click.pass_context
-def cli(ctx, config, verbose):
+def cli(ctx, config, workspace_dir, verbose):
     """wintest -- AI-powered Windows UI testing tool."""
     console.init()
     ctx.ensure_object(dict)
 
-    settings = Settings.load(config)
+    workspace.init(workspace_dir)
+    config_path = config or str(workspace.config_file())
+    settings = Settings.load(config_path)
     if verbose:
         settings.logging.level = "DEBUG"
 

@@ -39,6 +39,7 @@ export const builderApi = {
 
 export const fileApi = {
   pickExecutable: () => api.post<{ path: string }>('/files/pick-executable').then(r => r.data.path),
+  pickFolder: () => api.post<{ path: string }>('/files/pick-folder').then(r => r.data.path),
 };
 
 export const savedAppsApi = {
@@ -50,6 +51,8 @@ export const savedAppsApi = {
 export const settingsApi = {
   getModel: () => api.get('/settings/model').then(r => r.data),
   setModel: (model_path: string) => api.put('/settings/model', { model_path }).then(r => r.data),
+  getWorkspace: () => api.get('/settings/workspace').then(r => r.data),
+  setWorkspace: (root: string) => api.put('/settings/workspace', { root }).then(r => r.data),
 };
 
 export const reportApi = {

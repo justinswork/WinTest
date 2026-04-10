@@ -4,14 +4,13 @@ import json
 import shutil
 from pathlib import Path
 
+from ....config import workspace
 from ..models import ReportSummary
-
-REPORTS_DIR = "reports"
 
 
 def list_reports() -> list[ReportSummary]:
     """List all reports sorted by date descending."""
-    reports_dir = Path(REPORTS_DIR)
+    reports_dir = workspace.reports_dir()
     if not reports_dir.exists():
         return []
 
@@ -203,7 +202,7 @@ def export_pdf(report_id: str) -> Path:
 
 def _resolve_report(report_id: str) -> Path:
     """Resolve a report_id to a directory path."""
-    path = Path(REPORTS_DIR) / report_id
+    path = workspace.reports_dir() / report_id
     if not path.exists() or not path.is_dir():
         raise FileNotFoundError(f"Report not found: {report_id}")
     return path

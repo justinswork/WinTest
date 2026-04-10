@@ -1,36 +1,38 @@
 """Tests for web service modules: test_service, test_suite_service, report_service."""
 
 import json
+from pathlib import Path
 import pytest
 
+from wintest.config import workspace
 from wintest.ui.web.models import TestModel, StepModel, TestSuiteModel
 from wintest.ui.web.services import test_service, test_suite_service, report_service
 
 
 @pytest.fixture
 def tests_dir(tmp_path, monkeypatch):
-    """Point test_service at a temp directory."""
+    """Point workspace.tests_dir at a temp directory."""
     d = tmp_path / "tests"
     d.mkdir()
-    monkeypatch.setattr(test_service, "TESTS_DIR", str(d))
+    monkeypatch.setattr(workspace, "_workspace_root", tmp_path)
     return d
 
 
 @pytest.fixture
 def suites_dir(tmp_path, monkeypatch):
-    """Point test_suite_service at a temp directory."""
+    """Point workspace.suites_dir at a temp directory."""
     d = tmp_path / "test_suites"
     d.mkdir()
-    monkeypatch.setattr(test_suite_service, "SUITES_DIR", str(d))
+    monkeypatch.setattr(workspace, "_workspace_root", tmp_path)
     return d
 
 
 @pytest.fixture
 def reports_dir(tmp_path, monkeypatch):
-    """Point report_service at a temp directory."""
+    """Point workspace.reports_dir at a temp directory."""
     d = tmp_path / "reports"
     d.mkdir()
-    monkeypatch.setattr(report_service, "REPORTS_DIR", str(d))
+    monkeypatch.setattr(workspace, "_workspace_root", tmp_path)
     return d
 
 
@@ -60,7 +62,7 @@ class TestTestServiceList:
         assert "(invalid:" in items[0].name
 
     def test_missing_directory(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(test_service, "TESTS_DIR", str(tmp_path / "nonexistent"))
+        monkeypatch.setattr(workspace, "_workspace_root", tmp_path / "nonexistent")
         assert test_service.list_tests() == []
 
 
@@ -185,7 +187,7 @@ class TestSuiteServiceList:
         assert items[0].test_count == 2
 
     def test_missing_directory(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(test_suite_service, "SUITES_DIR", str(tmp_path / "nonexistent"))
+        monkeypatch.setattr(workspace, "_workspace_root", tmp_path / "nonexistent")
         assert test_suite_service.list_suites() == []
 
 
@@ -232,7 +234,7 @@ class TestReportServiceList:
         assert report_service.list_reports() == []
 
     def test_missing_directory(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(report_service, "REPORTS_DIR", str(tmp_path / "nonexistent"))
+        monkeypatch.setattr(workspace, "_workspace_root", tmp_path / "nonexistent")
         assert report_service.list_reports() == []
 
     def test_lists_valid_report(self, reports_dir):
