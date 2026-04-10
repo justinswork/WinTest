@@ -291,6 +291,7 @@
   "builder.detail.clickCoords": "Click",
   "builder.detail.pixelCoords": "Pixels",
   "builder.detail.error": "Error",
+  "builder.tagsAndVariables": "Tags & Variables",
   "builder.descriptionPlaceholder": "Description (optional)",
 
   "appPath.browse": "Browse for application",

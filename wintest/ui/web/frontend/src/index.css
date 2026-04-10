@@ -1585,6 +1585,39 @@ select.input {
   color: var(--primary);
 }
 
+.builder-metadata {
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.builder-metadata-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-surface);
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.builder-metadata-toggle:hover {
+  color: var(--text);
+}
+
+.builder-metadata-content {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .builder-run-split {
   display: flex;
   position: relative;

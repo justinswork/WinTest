@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Play, Trash2, Save, Square, Camera, Check, ChevronDown } from 'lucide-react';
+import { Play, Trash2, Save, Square, Camera, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { builderApi } from '../api/client';
 import { AppPathInput } from '../components/common/AppPathInput';
+import { VariablesEditor } from '../components/tasks/VariablesEditor';
 import { useTestStore } from '../stores/testStore';
 import { showToast } from '../components/common/Toast';
 import { StatusBadge } from '../components/common/StatusBadge';
@@ -23,7 +24,7 @@ interface BuilderStep {
 export function TestBuilder() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { saveTest } = useTestStore();
+  const { saveTest, stepTypes, fetchStepTypes } = useTestStore();
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState(false);
@@ -47,6 +48,12 @@ export function TestBuilder() {
   const [appPath, setAppPath] = useState('');
   const [appTitle, setAppTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [variableName, setVariableName] = useState('');
+  const [variableValue, setVariableValue] = useState('');
+  const [loopTarget, setLoopTarget] = useState(1);
+  const [repeatCount, setRepeatCount] = useState(1);
+  const [tags, setTags] = useState<string[]>([]);
+  const [variables, setVariables] = useState<Record<string, string>>({});
 
   const handleStart = async () => {
     setLoading(true);
@@ -55,6 +62,26 @@ export function TestBuilder() {
       setActive(true);
       setSteps([]);
       setScreenshot(null);
+      setSelectedStep(null);
+      setPendingStep(null);
+      setPickMode(false);
+      setShowRunMenu(false);
+      setAction('launch_application');
+      setTarget('');
+      setText('');
+      setKey('');
+      setKeys('');
+      setScrollAmount(3);
+      setWaitSeconds(1);
+      setAppPath('');
+      setAppTitle('');
+      setDescription('');
+      setVariableName('');
+      setVariableValue('');
+      setLoopTarget(1);
+      setRepeatCount(1);
+      setTags([]);
+      setVariables({});
       showToast(t('builder.started'));
     } catch {
       showToast(t('builder.startFailed'), 'error');
@@ -182,6 +209,14 @@ export function TestBuilder() {
         step.app_title = appTitle || undefined;
         step.wait_seconds = 1; // minimal wait; real value set when user clicks Screenshot
         break;
+      case 'set_variable':
+        step.variable_name = variableName;
+        step.variable_value = variableValue;
+        break;
+      case 'loop':
+        step.loop_target = loopTarget;
+        step.repeat = repeatCount;
+        break;
     }
     return step;
   };
@@ -207,6 +242,10 @@ export function TestBuilder() {
     setAppPath('');
     setAppTitle('');
     setDescription('');
+    setVariableName('');
+    setVariableValue('');
+    setLoopTarget(1);
+    setRepeatCount(1);
   };
 
   const retryPendingStep = () => {
@@ -243,6 +282,10 @@ export function TestBuilder() {
     setAppPath('');
     setAppTitle('');
     setDescription('');
+    setVariableName('');
+    setVariableValue('');
+    setLoopTarget(1);
+    setRepeatCount(1);
   };
 
   const handleExecute = async () => {
@@ -287,6 +330,10 @@ export function TestBuilder() {
         setAppPath('');
         setAppTitle('');
         setDescription('');
+    setVariableName('');
+    setVariableValue('');
+    setLoopTarget(1);
+    setRepeatCount(1);
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Step failed';
@@ -295,6 +342,10 @@ export function TestBuilder() {
       setExecuting(false);
     }
   };
+
+  useEffect(() => {
+    fetchStepTypes();
+  }, [fetchStepTypes]);
 
   useEffect(() => {
     if (!showRunMenu) return;
@@ -326,8 +377,8 @@ export function TestBuilder() {
         filename: null,
         steps: steps.map(s => s.step),
         settings: {},
-        variables: {},
-        tags: [],
+        variables,
+        tags,
       };
       await saveTest(test);
       showToast(t('builder.saved'));
@@ -455,6 +506,56 @@ export function TestBuilder() {
             />
           </>
         );
+      case 'set_variable':
+        return (
+          <>
+            <input
+              ref={inputRef}
+              className="input"
+              placeholder={t('stepForm.variableNamePlaceholder')}
+              value={variableName}
+              onChange={e => setVariableName(e.target.value)}
+              disabled={executing}
+              style={{ width: 150 }}
+            />
+            <input
+              className="input flex-1"
+              placeholder={t('stepForm.variableValuePlaceholder')}
+              value={variableValue}
+              onChange={e => setVariableValue(e.target.value)}
+              disabled={executing}
+            />
+          </>
+        );
+      case 'loop':
+        return (
+          <>
+            <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              {t('stepForm.loopTargetPlaceholder')}
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={loopTarget}
+                onChange={e => setLoopTarget(parseInt(e.target.value) || 1)}
+                disabled={executing}
+                style={{ width: 60 }}
+              />
+            </label>
+            <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              {t('stepForm.repeatPlaceholder')}
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={repeatCount}
+                onChange={e => setRepeatCount(parseInt(e.target.value) || 1)}
+                disabled={executing}
+                style={{ width: 60 }}
+              />
+            </label>
+          </>
+        );
       default:
         return null;
     }
@@ -575,6 +676,11 @@ export function TestBuilder() {
         </div>
       )}
 
+      {/* Tags and Variables */}
+      {active && (
+        <BuilderMetadata tags={tags} onTagsChange={setTags} variables={variables} onVariablesChange={setVariables} />
+      )}
+
       {/* Command input bar */}
       {active && !pendingStep && (
         <div className="builder-input-bar">
@@ -585,16 +691,9 @@ export function TestBuilder() {
             style={{ width: 160 }}
             disabled={executing}
           >
-            <option value="launch_application">launch app</option>
-            <option value="click">click</option>
-            <option value="double_click">double click</option>
-            <option value="right_click">right click</option>
-            <option value="type">type</option>
-            <option value="press_key">press key</option>
-            <option value="hotkey">hotkey</option>
-            <option value="scroll">scroll</option>
-            <option value="wait">wait</option>
-            <option value="verify">verify</option>
+            {stepTypes.map(st => (
+              <option key={st.name} value={st.name}>{st.name}</option>
+            ))}
           </select>
           {renderFieldsForAction()}
           <input
@@ -622,6 +721,79 @@ export function TestBuilder() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BuilderMetadata({ tags, onTagsChange, variables, onVariablesChange }: {
+  tags: string[];
+  onTagsChange: (tags: string[]) => void;
+  variables: Record<string, string>;
+  onVariablesChange: (variables: Record<string, string>) => void;
+}) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newTag, setNewTag] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (adding && inputRef.current) inputRef.current.focus();
+  }, [adding]);
+
+  const commitTag = () => {
+    const trimmed = newTag.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      onTagsChange([...tags, trimmed]);
+    }
+    setNewTag('');
+    setAdding(false);
+  };
+
+  return (
+    <div className="builder-metadata">
+      <button className="builder-metadata-toggle" onClick={() => setExpanded(!expanded)}>
+        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {t('builder.tagsAndVariables')}
+        {(tags.length > 0 || Object.keys(variables).length > 0) && (
+          <span className="console-count">{tags.length + Object.keys(variables).length}</span>
+        )}
+      </button>
+      {expanded && (
+        <div className="builder-metadata-content">
+          <div className="form-group">
+            <label>{t('testEditor.tags')}</label>
+            <div className="tags-input">
+              {tags.map(tag => (
+                <span key={tag} className="tag-chip">
+                  {tag}
+                  <button className="tag-chip-remove" onClick={() => onTagsChange(tags.filter(t => t !== tag))}>&times;</button>
+                </span>
+              ))}
+              {adding ? (
+                <input
+                  ref={inputRef}
+                  className="input tag-input-inline"
+                  value={newTag}
+                  onChange={e => setNewTag(e.target.value)}
+                  onBlur={commitTag}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') commitTag();
+                    if (e.key === 'Escape') { setNewTag(''); setAdding(false); }
+                  }}
+                  placeholder={t('testEditor.tagInputPlaceholder')}
+                />
+              ) : (
+                <button className="tag-add-btn" onClick={() => setAdding(true)}>+</button>
+              )}
+            </div>
+          </div>
+          <div className="form-group">
+            <label>{t('testEditor.variables')}</label>
+            <VariablesEditor variables={variables} onChange={onVariablesChange} />
           </div>
         </div>
       )}
