@@ -38,7 +38,7 @@ test = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/unit"]
+testpaths = ["pytests"]
 filterwarnings = ["ignore::pytest.PytestCollectionWarning"]
 
 [tool.setuptools.packages.find]

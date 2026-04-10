@@ -12,6 +12,8 @@
   "nav.collapse": "Collapse sidebar",
   "nav.expand": "Expand sidebar",
 
+  "dashboard.workspaceNotConfigured": "No workspace directory configured. Choose a folder to store your tests, suites, reports, and settings.",
+  "dashboard.configureWorkspace": "Configure Workspace",
   "dashboard.modelStatus": "Model Status",
   "dashboard.statusLabel": "Status:",
   "dashboard.modelLabel": "Model:",

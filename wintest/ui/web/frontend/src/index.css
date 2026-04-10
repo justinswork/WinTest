@@ -1694,6 +1694,24 @@ select.input {
   max-width: 600px;
 }
 
+.workspace-banner {
+  background: #fefce8;
+  border: 1px solid #eab308;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.workspace-banner p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #854d0e;
+}
+
 .workspace-paths {
   margin-top: 0.5rem;
   display: flex;

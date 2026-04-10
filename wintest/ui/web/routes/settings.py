@@ -41,7 +41,10 @@ class WorkspaceRequest(BaseModel):
 @router.get("/workspace")
 async def get_workspace():
     """Get the current workspace configuration."""
+    if not workspace.is_configured():
+        return {"configured": False}
     return {
+        "configured": True,
         "root": str(workspace.root()),
         "tests_dir": str(workspace.tests_dir()),
         "suites_dir": str(workspace.suites_dir()),

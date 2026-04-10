@@ -22,12 +22,18 @@ export function Dashboard() {
   const { modelStatus, loadModel, fetchStatus, handleWsMessage, cancelRun, status, testName, currentStep, totalSteps, stepResults, currentLabel, error } = useExecutionStore();
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [modelName, setModelName] = useState<string>('');
+  const [workspaceConfigured, setWorkspaceConfigured] = useState(true);
 
   useExecutionWebSocket(handleWsMessage);
 
   useEffect(() => {
     fetchStatus();
-    reportApi.list().then(setReports);
+    settingsApi.getWorkspace().then(data => {
+      setWorkspaceConfigured(data.configured !== false);
+      if (data.configured !== false) {
+        reportApi.list().then(setReports);
+      }
+    });
     settingsApi.getModel().then(data => setModelName(data.model_path));
   }, [fetchStatus]);
 
@@ -53,6 +59,15 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
+      {!workspaceConfigured && (
+        <div className="workspace-banner">
+          <p>{t('dashboard.workspaceNotConfigured')}</p>
+          <button className="btn btn-primary" onClick={() => navigate('/settings')}>
+            <Settings size={16} />{t('dashboard.configureWorkspace')}
+          </button>
+        </div>
+      )}
+
       <div className="section">
         <div className="section-header">
           <h2>{t('dashboard.modelStatus')}</h2>

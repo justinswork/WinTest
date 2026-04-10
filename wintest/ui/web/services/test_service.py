@@ -14,6 +14,8 @@ from ..models import TestModel, TestListItem, StepModel, ValidationResult, StepI
 
 def list_tests(settings=None) -> list[TestListItem]:
     """List all test YAML files in the tests directory, including subfolders."""
+    if not workspace.is_configured():
+        return []
     tests_dir = workspace.tests_dir()
     if not tests_dir.exists():
         return []

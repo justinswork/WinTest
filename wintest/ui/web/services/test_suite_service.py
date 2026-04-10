@@ -12,6 +12,8 @@ from ..models import TestSuiteModel, TestSuiteListItem
 
 def list_suites() -> list[TestSuiteListItem]:
     """List all suite YAML files in the suites directory."""
+    if not workspace.is_configured():
+        return []
     suites_dir = workspace.suites_dir()
     if not suites_dir.exists():
         return []

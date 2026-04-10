@@ -10,6 +10,8 @@ from ..models import ReportSummary
 
 def list_reports() -> list[ReportSummary]:
     """List all reports sorted by date descending."""
+    if not workspace.is_configured():
+        return []
     reports_dir = workspace.reports_dir()
     if not reports_dir.exists():
         return []

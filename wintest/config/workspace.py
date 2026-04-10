@@ -31,19 +31,35 @@ def _save_root(root: str) -> None:
 
 
 def init(root: str | None = None) -> None:
-    """Initialize the workspace root. Call once at startup."""
+    """Initialize the workspace root. Call once at startup.
+
+    If no root is provided and none is saved, workspace stays unset.
+    Services should check is_configured() before using paths.
+    """
     global _workspace_root
     if root:
         _workspace_root = Path(root).resolve()
+        _ensure_dirs()
     elif saved := _load_saved_root():
         _workspace_root = Path(saved).resolve()
+        _ensure_dirs()
     else:
-        _workspace_root = Path.cwd()
-    # Ensure key directories exist
+        _workspace_root = None
+
+
+def _ensure_dirs() -> None:
+    """Create workspace subdirectories if they don't exist."""
+    if _workspace_root is None:
+        return
     tests_dir().mkdir(parents=True, exist_ok=True)
     suites_dir().mkdir(parents=True, exist_ok=True)
     reports_dir().mkdir(parents=True, exist_ok=True)
     config_dir().mkdir(parents=True, exist_ok=True)
+
+
+def is_configured() -> bool:
+    """Check if a workspace has been configured."""
+    return _workspace_root is not None
 
 
 def set_root(new_root: str) -> None:
@@ -51,17 +67,13 @@ def set_root(new_root: str) -> None:
     global _workspace_root
     _workspace_root = Path(new_root).resolve()
     _save_root(str(_workspace_root))
-    # Ensure directories exist in the new workspace
-    tests_dir().mkdir(parents=True, exist_ok=True)
-    suites_dir().mkdir(parents=True, exist_ok=True)
-    reports_dir().mkdir(parents=True, exist_ok=True)
-    config_dir().mkdir(parents=True, exist_ok=True)
+    _ensure_dirs()
 
 
 def root() -> Path:
-    """Get the workspace root directory."""
+    """Get the workspace root directory. Raises if not configured."""
     if _workspace_root is None:
-        init()
+        raise RuntimeError("Workspace not configured. Set a workspace directory in Settings.")
     return _workspace_root
 
 
