@@ -2,6 +2,8 @@
 
 Items are scored by **Impact** (value to users, 1-10) and **Difficulty** (implementation effort, 1-10).
 
+---
+
 ## Result Notes & Annotations — Impact: 6 | Difficulty: 4
 Allow users to add notes to test results, both at the test level and per step. Useful for documenting why a test failed, what was investigated, or any observations. Notes would be stored in the report JSON and included in the PDF export. Could include:
 - A text field on the result viewer page for test-level notes
