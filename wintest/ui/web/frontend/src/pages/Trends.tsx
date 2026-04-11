@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -11,9 +11,19 @@ import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
 export function Trends() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedTest = searchParams.get('test');
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTest, setSelectedTest] = useState<string | null>(null);
+
+  const setSelectedTest = (name: string | null) => {
+    if (name) {
+      navigate(`/trends?test=${encodeURIComponent(name)}`);
+    } else {
+      navigate('/trends');
+    }
+  };
 
   useEffect(() => {
     reportApi.list().then(data => {
