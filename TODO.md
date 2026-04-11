@@ -2,6 +2,13 @@
 
 Items are scored by **Impact** (value to users, 1-10) and **Difficulty** (implementation effort, 1-10).
 
+## Result Notes & Annotations — Impact: 6 | Difficulty: 4
+Allow users to add notes to test results, both at the test level and per step. Useful for documenting why a test failed, what was investigated, or any observations. Notes would be stored in the report JSON and included in the PDF export. Could include:
+- A text field on the result viewer page for test-level notes
+- Per-step notes that expand inline when viewing step details
+- Timestamps on notes for tracking investigation progress
+- Notes persist with the report and appear in exported PDFs
+
 ## Suite Execution Viewer — Impact: 8 | Difficulty: 3
 The execution viewer currently shows no progress during suite runs — it only handles single-test step messages. Add handling for `test_suite_test_started` and `test_suite_test_completed` WebSocket messages to show per-test progress during a suite run (e.g. "Test 2/3: Notepad Basic Test — PASSED").
 
