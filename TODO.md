@@ -45,11 +45,12 @@ Investigate ways to isolate the test execution environment from the user's deskt
 - **Input isolation:** Prevent user mouse/keyboard input from interfering with a running test (or at least warn/pause if user input is detected).
 - **Window-only capture:** Capture only the target application window instead of the full screen, reducing noise from other windows and making the test more reliable.
 
-## Screenshot Baselines & Visual Regression — Impact: 9 | Difficulty: 8
-Multi-part feature for comparing screenshots against known-good baselines:
-- **Baseline Storage & Management** — "Set as Baseline" button on passing reports, copies screenshots to a stable per-test location. "Update Baseline" to replace with a new passing run.
-- **Screenshot Comparison Viewer** — Side-by-side, toggle, and overlay display modes when viewing a failed report against its baseline. Highlight changed regions in overlay mode.
-- **compare_screenshot Step Type** — New step that compares the current screen against the baseline with a configurable similarity threshold.
+## Screenshot Comparison Viewer — Impact: 6 | Difficulty: 5
+The verify_screenshot step and baseline storage are implemented. Remaining work:
+- **Side-by-side viewer** in the report viewer — show baseline vs actual vs diff images when viewing a failed verify_screenshot step
+- **Toggle and overlay display modes** — let users flip between the three comparison views
+- **"Set as Baseline" from reports** — button on passing runs to update the baseline from the actual screenshot
+- **"Update Baseline" in builder** — re-capture and replace an existing baseline
 
 ## Remote Access & Multi-User Support — Impact: 8 | Difficulty: 8
 Allow the wintest web server to be accessed from other machines on the network so team members can view reports, trigger runs, and monitor progress without needing GPU hardware locally. Requires:
@@ -59,8 +60,11 @@ Allow the wintest web server to be accessed from other machines on the network s
 - **Concurrency UX** — clear feedback when a run is already in progress
 - Ties into Environment Isolation
 
-## Vision Model Tiling (Dynamic Resolution) — Impact: 10 | Difficulty: 6
-The vision model currently resizes the entire screenshot (e.g. 2560x1440) down to 448x448, losing critical detail for small UI elements like menu text. InternVL2 supports dynamic resolution / tile mode where the image is split into 448x448 tiles that are processed together, preserving detail. Implementing this would dramatically improve click accuracy for small elements and dense UIs. This is the single biggest improvement that can be made to test reliability.
+## Vision Model Accuracy — Impact: 10 | Difficulty: 8
+AI-based element grounding (clicking by description) works but is not reliable enough for production use. Current approach uses coordinate-based clicking as the primary method. Future improvements:
+- **Fine-tune a custom model** on UI screenshot datasets for accurate element grounding
+- **Evaluate newer models** as they become available (GUI-Actor, UI-TARS, etc.)
+- **Hybrid approach** — use AI for verification/element presence checks while coordinate clicking handles actions
 
 ## Retry Failed Tests in Suites — Impact: 6 | Difficulty: 3
 Re-run only the failed tests from a completed suite run, instead of re-running the entire suite.

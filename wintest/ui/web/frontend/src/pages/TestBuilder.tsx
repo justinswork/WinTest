@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Play, Trash2, Save, Square, Check, ChevronDown, ChevronRight, Camera } from 'lucide-react';
-import { builderApi } from '../api/client';
+import { builderApi, baselineApi } from '../api/client';
 import { AppPathInput } from '../components/common/AppPathInput';
 import { VariablesEditor } from '../components/tasks/VariablesEditor';
 import { useTestStore } from '../stores/testStore';
@@ -49,6 +49,11 @@ export function TestBuilder() {
   const [appPath, setAppPath] = useState('');
   const [appTitle, setAppTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [regionMode, setRegionMode] = useState(false);
+  const regionStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [regionRect, setRegionRect] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [similarityThreshold, setSimilarityThreshold] = useState(0.90);
   const [variableName, setVariableName] = useState('');
   const [variableValue, setVariableValue] = useState('');
   const [loopTarget, setLoopTarget] = useState(1);
@@ -139,6 +144,7 @@ export function TestBuilder() {
   };
 
   const handleScreenshotClick = async (e: React.MouseEvent<HTMLImageElement>) => {
+    if (regionMode) return; // Don't handle clicks during region selection
     if (!pickMode || executing) return;
 
     const img = screenshotRef.current;
@@ -181,6 +187,110 @@ export function TestBuilder() {
     }
   };
 
+  const handleStartRegionSelect = async () => {
+    try {
+      const res = await builderApi.screenshot();
+      setScreenshot(res.screenshot_base64);
+      setSelectedStep(null);
+      setRegionMode(true);
+      setRegionRect(null);
+      regionStartRef.current = null;
+      setDragging(false);
+    } catch {
+      showToast(t('builder.captureFailed'), 'error');
+    }
+  };
+
+  const handleRegionMouseDown = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (!regionMode) return;
+    e.preventDefault();
+    const img = screenshotRef.current;
+    if (!img) return;
+    const rect = img.getBoundingClientRect();
+    const start = {
+      x: (e.clientX - rect.left) / rect.width,
+      y: (e.clientY - rect.top) / rect.height,
+    };
+    regionStartRef.current = start;
+    setDragging(true);
+    setRegionRect(null);
+  };
+
+  const handleRegionMouseMove = (e: React.MouseEvent) => {
+    if (!regionMode || !dragging || !regionStartRef.current) return;
+    e.preventDefault();
+    const img = screenshotRef.current;
+    if (!img) return;
+    const rect = img.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    const start = regionStartRef.current;
+    setRegionRect({
+      x1: Math.min(start.x, x),
+      y1: Math.min(start.y, y),
+      x2: Math.max(start.x, x),
+      y2: Math.max(start.y, y),
+    });
+  };
+
+  const handleRegionMouseUp = () => {
+    if (!regionMode || !dragging) return;
+    regionStartRef.current = null;
+    setDragging(false);
+  };
+
+  const handleSaveBaseline = async () => {
+    if (!regionRect || !screenshot) return;
+    setExecuting(true);
+    try {
+      // Create a canvas to crop the region from the screenshot
+      const img = new window.Image();
+      img.src = `data:image/png;base64,${screenshot}`;
+      await new Promise(resolve => { img.onload = resolve; });
+
+      const canvas = document.createElement('canvas');
+      const sx = Math.round(regionRect.x1 * img.width);
+      const sy = Math.round(regionRect.y1 * img.height);
+      const sw = Math.round((regionRect.x2 - regionRect.x1) * img.width);
+      const sh = Math.round((regionRect.y2 - regionRect.y1) * img.height);
+      canvas.width = sw;
+      canvas.height = sh;
+      canvas.getContext('2d')!.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+      const croppedBase64 = canvas.toDataURL('image/png').split(',')[1];
+      const baselineName = description || `baseline_step${steps.length + 1}`;
+      const result = await baselineApi.save(croppedBase64, baselineName);
+
+      // Add the verify_screenshot step
+      const stepData: Record<string, unknown> = {
+        action: 'verify_screenshot',
+        description: description || `Verify region matches baseline`,
+        baseline_id: result.baseline_id,
+        region: [regionRect.x1, regionRect.y1, regionRect.x2, regionRect.y2],
+        similarity_threshold: similarityThreshold,
+      };
+      const builderStep: BuilderStep = {
+        step: buildStepRecord(stepData),
+        passed: true,
+        error: null,
+        coordinates: null,
+        model_response: null,
+        duration_seconds: 0,
+        screenshot_base64: screenshot,
+      };
+      setSteps(prev => [...prev, builderStep]);
+      setRegionMode(false);
+      setRegionRect(null);
+      setAction('click');
+      setDescription('');
+      showToast(t('builder.baselineSaved'));
+    } catch {
+      showToast(t('builder.baselineSaveFailed'), 'error');
+    } finally {
+      setExecuting(false);
+    }
+  };
+
   const buildStepFromForm = (): Record<string, unknown> => {
     const step: Record<string, unknown> = { action, description: description || undefined };
     switch (action) {
@@ -217,6 +327,9 @@ export function TestBuilder() {
       case 'loop':
         step.loop_target = loopTarget;
         step.repeat = repeatCount;
+        break;
+      case 'verify_screenshot':
+        // Handled separately via handleSaveBaseline
         break;
     }
     return step;
@@ -568,6 +681,32 @@ export function TestBuilder() {
             </label>
           </>
         );
+      case 'verify_screenshot':
+        return (
+          <>
+            <button
+              className="btn btn-secondary"
+              onClick={handleStartRegionSelect}
+              disabled={executing || regionMode}
+            >
+              {t('builder.selectRegion')}
+            </button>
+            <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              {t('builder.threshold')}
+              <input
+                className="input"
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={similarityThreshold}
+                onChange={e => setSimilarityThreshold(parseFloat(e.target.value) || 0.95)}
+                disabled={executing}
+                style={{ width: 70 }}
+              />
+            </label>
+          </>
+        );
       default:
         return null;
     }
@@ -729,19 +868,55 @@ export function TestBuilder() {
                 </button>
               </div>
             )}
-            {displayedScreenshot ? (
-              <img
-                ref={screenshotRef}
-                src={`data:image/png;base64,${displayedScreenshot}`}
-                alt="Current screen"
-                className={`screenshot-img${pickMode ? ' screenshot-pickable' : ''}`}
-                onClick={handleScreenshotClick}
-              />
-            ) : (
-              <div className="screenshot-placeholder">
-                <p>{t('builder.screenshotPlaceholder')}</p>
+            {regionMode && (
+              <div className="builder-pick-banner" style={{ background: '#f0fdf4', color: '#166534', borderColor: '#22c55e' }}>
+                <span>{regionRect ? t('builder.regionConfirm') : t('builder.regionInstruction')}</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.3rem' }}>
+                  {regionRect && (
+                    <button className="btn btn-success btn-sm" onClick={handleSaveBaseline} disabled={executing}>
+                      {t('builder.saveBaseline')}
+                    </button>
+                  )}
+                  <button className="btn btn-sm" onClick={() => { setRegionMode(false); setRegionRect(null); }} style={{ color: '#166534', background: 'none', border: '1px solid #bbf7d0' }}>
+                    {t('builder.cancelPick')}
+                  </button>
+                </div>
               </div>
             )}
+            <div
+              className="builder-screenshot-container"
+              onMouseMove={handleRegionMouseMove}
+              onMouseUp={handleRegionMouseUp}
+            >
+              {displayedScreenshot ? (
+                <>
+                  <img
+                    ref={screenshotRef}
+                    src={`data:image/png;base64,${displayedScreenshot}`}
+                    alt="Current screen"
+                    className={`screenshot-img${pickMode ? ' screenshot-pickable' : ''}${regionMode ? ' screenshot-region-select' : ''}`}
+                    onClick={handleScreenshotClick}
+                    onMouseDown={handleRegionMouseDown}
+                    draggable={false}
+                  />
+                  {regionRect && (
+                    <div
+                      className="region-overlay"
+                      style={{
+                        left: `${regionRect.x1 * 100}%`,
+                        top: `${regionRect.y1 * 100}%`,
+                        width: `${(regionRect.x2 - regionRect.x1) * 100}%`,
+                        height: `${(regionRect.y2 - regionRect.y1) * 100}%`,
+                      }}
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="screenshot-placeholder">
+                  <p>{t('builder.screenshotPlaceholder')}</p>
+                </div>
+              )}
+            </div>
 
           </div>
         </div>

@@ -49,6 +49,13 @@ export const savedAppsApi = {
   remove: (path: string) => api.delete('/saved-apps', { data: { path } }).then(r => r.data),
 };
 
+export const baselineApi = {
+  list: () => api.get('/baselines').then(r => r.data),
+  save: (image_base64: string, name: string) => api.post('/baselines', { image_base64, name }).then(r => r.data),
+  get: (id: string) => api.get(`/baselines/${id}`).then(r => r.data),
+  delete: (id: string) => api.delete(`/baselines/${id}`).then(r => r.data),
+};
+
 export const settingsApi = {
   getModel: () => api.get('/settings/model').then(r => r.data),
   setModel: (model_path: string) => api.put('/settings/model', { model_path }).then(r => r.data),

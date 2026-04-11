@@ -24,6 +24,9 @@ class StepModel(BaseModel):
     repeat: int = 0
     click_x: float | None = None
     click_y: float | None = None
+    region: list[float] | None = None
+    baseline_id: str | None = None
+    similarity_threshold: float = 0.90
 
 
 class TestModel(BaseModel):

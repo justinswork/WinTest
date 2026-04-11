@@ -128,6 +128,29 @@ const FIELD_RENDERERS: Record<string, FieldRenderer> = {
       onChange={e => update('repeat', parseInt(e.target.value) || 0)}
     />
   ),
+  baseline_id: (step, _field, update, t) => (
+    <input
+      className="input"
+      placeholder={t('stepForm.baselineIdPlaceholder')}
+      value={step.baseline_id ?? ''}
+      onChange={e => update('baseline_id', e.target.value || null)}
+    />
+  ),
+  similarity_threshold: (step, _field, update, t) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+      <input
+        className="input"
+        type="number"
+        min="0"
+        max="1"
+        step="0.01"
+        value={step.similarity_threshold}
+        onChange={e => update('similarity_threshold', parseFloat(e.target.value) || 0.90)}
+        style={{ width: 80 }}
+      />
+      <span className="text-muted" style={{ fontSize: '0.78rem' }}>{t('stepForm.thresholdHint')}</span>
+    </div>
+  ),
 };
 
 export function StepForm({ step, index, onChange, onDelete, onDuplicate }: Props) {

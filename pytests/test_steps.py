@@ -8,10 +8,11 @@ from wintest.tasks.validator import validate_test
 
 EXPECTED_ACTIONS = {
     "click", "double_click", "hotkey", "launch_application", "loop",
-    "press_key", "right_click", "scroll", "set_variable", "type", "verify", "wait",
+    "press_key", "right_click", "scroll", "set_variable", "type",
+    "verify", "verify_screenshot", "wait",
 }
 
-RUNNER_STEPS = {"launch_application", "loop", "set_variable"}
+RUNNER_STEPS = {"launch_application", "loop", "set_variable", "verify_screenshot"}
 
 
 class TestRegistry:

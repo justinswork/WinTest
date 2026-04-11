@@ -64,6 +64,7 @@ def _ensure_dirs() -> None:
     tests_dir().mkdir(parents=True, exist_ok=True)
     suites_dir().mkdir(parents=True, exist_ok=True)
     reports_dir().mkdir(parents=True, exist_ok=True)
+    baselines_dir().mkdir(parents=True, exist_ok=True)
     config_dir().mkdir(parents=True, exist_ok=True)
 
 
@@ -109,3 +110,7 @@ def suites_dir() -> Path:
 
 def reports_dir() -> Path:
     return root() / "reports"
+
+
+def baselines_dir() -> Path:
+    return root() / "baselines"

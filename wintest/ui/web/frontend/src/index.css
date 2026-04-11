@@ -1468,6 +1468,23 @@ select.input {
   cursor: crosshair;
 }
 
+.builder-screenshot-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.screenshot-region-select {
+  cursor: crosshair;
+  user-select: none;
+}
+
+.region-overlay {
+  position: absolute;
+  border: 2px solid #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  pointer-events: none;
+}
+
 .builder-confirm-bar {
   display: flex;
   align-items: center;

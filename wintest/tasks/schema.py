@@ -24,6 +24,9 @@ class Step:
     repeat: int = 0
     click_x: Optional[float] = None
     click_y: Optional[float] = None
+    region: Optional[list[float]] = None  # [x1, y1, x2, y2] normalized 0-1
+    baseline_id: Optional[str] = None     # ID referencing saved baseline image
+    similarity_threshold: float = 0.90    # 0-1, how similar the region must be
 
 
 @dataclass

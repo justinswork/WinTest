@@ -64,6 +64,9 @@ def load_test(filepath: str, settings=None) -> TestDefinition:
             repeat=step_data.get("repeat", 0),
             click_x=step_data.get("click_x"),
             click_y=step_data.get("click_y"),
+            region=step_data.get("region"),
+            baseline_id=step_data.get("baseline_id"),
+            similarity_threshold=step_data.get("similarity_threshold", 0.90),
         ))
 
     return TestDefinition(

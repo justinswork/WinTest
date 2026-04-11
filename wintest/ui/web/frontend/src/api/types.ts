@@ -19,6 +19,9 @@ export interface Step {
   repeat: number;
   click_x: number | null;
   click_y: number | null;
+  region: number[] | null;
+  baseline_id: string | null;
+  similarity_threshold: number;
 }
 
 export interface Test {
@@ -185,5 +188,8 @@ export function newStep(): Step {
     repeat: 0,
     click_x: null,
     click_y: null,
+    region: null,
+    baseline_id: null,
+    similarity_threshold: 0.90,
   };
 }
