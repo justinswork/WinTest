@@ -74,8 +74,9 @@ function TestCard({ name, runs, onClick }: { name: string; runs: ReportSummary[]
   const totalRuns = runs.length;
   const passCount = runs.filter(r => r.passed).length;
   const passRate = totalRuns > 0 ? Math.round((passCount / totalRuns) * 100) : 0;
-  const avgDuration = totalRuns > 0
-    ? Math.round(runs.reduce((s, r) => s + r.duration_seconds, 0) / totalRuns * 10) / 10
+  const passedRuns = runs.filter(r => r.passed);
+  const avgDuration = passedRuns.length > 0
+    ? Math.round(passedRuns.reduce((s, r) => s + r.duration_seconds, 0) / passedRuns.length * 10) / 10
     : 0;
 
   // Last 10 runs for status boxes
@@ -148,8 +149,9 @@ function TestDetail({ name, runs, onBack }: { name: string; runs: ReportSummary[
   const totalRuns = runs.length;
   const passCount = runs.filter(r => r.passed).length;
   const passRate = totalRuns > 0 ? Math.round((passCount / totalRuns) * 100) : 0;
-  const avgDuration = totalRuns > 0
-    ? Math.round(runs.reduce((s, r) => s + r.duration_seconds, 0) / totalRuns * 10) / 10
+  const passedRuns = runs.filter(r => r.passed);
+  const avgDuration = passedRuns.length > 0
+    ? Math.round(passedRuns.reduce((s, r) => s + r.duration_seconds, 0) / passedRuns.length * 10) / 10
     : 0;
 
   const chartData = runs.map((r, i) => {
