@@ -1,4 +1,9 @@
-"""Compare-new-file step — find a new file in a watched directory and compare to baseline."""
+"""Compare-saved-file step — watch a directory for a new file and compare to baseline.
+
+Combines watch_directory + compare_new_file into a single step. The runner
+takes a directory snapshot before executing this step's predecessors, then
+at execution time finds the new file and compares it.
+"""
 
 import json
 import logging
@@ -19,54 +24,28 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".tif", ".gif"}
 
 def validate(step, step_num):
     issues = []
+    if not step.file_path:
+        issues.append(f"Step {step_num}: 'compare_saved_file' requires a 'file_path' (directory to watch)")
     if not step.baseline_id:
-        issues.append(f"Step {step_num}: 'compare_new_file' requires a 'baseline_id'")
+        issues.append(f"Step {step_num}: 'compare_saved_file' requires a 'baseline_id'")
     return issues
 
 
-def _find_new_file(dir_path: str, old_snapshot: dict, timeout: float = 30.0) -> str | None:
-    """Wait for a new file to appear in the directory."""
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        current_files = {}
-        try:
-            for name in os.listdir(dir_path):
-                full_path = os.path.join(dir_path, name)
-                if os.path.isfile(full_path):
-                    current_files[name] = os.path.getmtime(full_path)
-        except OSError:
-            time.sleep(0.5)
-            continue
-
-        # Find files that are new or modified
-        new_files = []
-        for name, mtime in current_files.items():
-            if name not in old_snapshot or mtime > old_snapshot.get(name, 0):
-                new_files.append(name)
-
-        if new_files:
-            # Return the newest one
-            newest = max(new_files, key=lambda n: current_files[n])
-            return os.path.join(dir_path, newest)
-
-        time.sleep(0.5)
-
-    return None
-
-
 def execute(step, runner_ctx):
-    """Find the new file and compare against baseline."""
+    """Find the new file in the watched directory and compare against baseline."""
+    dir_path = step.file_path
+
+    if not os.path.isdir(dir_path):
+        return StepResult(step=step, passed=False, error=f"Directory not found: {dir_path}")
+
+    # Get the snapshot from the runner context (set by the runner before this step)
     variables = runner_ctx.get("variables")
-    if not variables:
-        return StepResult(step=step, passed=False, error="No variable store available")
+    snapshot_json = variables.get(f"_dir_snapshot_{dir_path}") if variables else None
 
-    dir_path = variables.get("_watch_dir")
-    snapshot_json = variables.get("_watch_snapshot")
-
-    if not dir_path or not snapshot_json:
+    if not snapshot_json:
         return StepResult(
             step=step, passed=False,
-            error="No watch_directory step found before this step",
+            error=f"No directory snapshot for {dir_path}. This step needs preceding steps to trigger a file save.",
         )
 
     try:
@@ -76,7 +55,21 @@ def execute(step, runner_ctx):
 
     # Wait for new file
     timeout = step.wait_seconds if step.wait_seconds > 0 else 30.0
+    logger.info("Watching %s for a new file (timeout: %.0fs)...", dir_path, timeout)
+
+    # Broadcast watching status if running from web
+    progress_cb = runner_ctx.get("progress_callback")
+    if progress_cb and hasattr(progress_cb, 'app_state'):
+        progress_cb.app_state.broadcast_sync({
+            "type": "watching_directory",
+            "directory": dir_path,
+            "timeout": timeout,
+        })
     new_file = _find_new_file(dir_path, old_snapshot, timeout=timeout)
+
+    # Clear watching status
+    if progress_cb and hasattr(progress_cb, 'app_state'):
+        progress_cb.app_state.broadcast_sync({"type": "watching_directory_done"})
 
     if not new_file:
         return StepResult(
@@ -86,7 +79,6 @@ def execute(step, runner_ctx):
 
     logger.info("New file detected: %s", new_file)
 
-    # Store the path in a variable for reference
     if variables:
         variables.set("new_file_path", new_file)
 
@@ -102,7 +94,6 @@ def execute(step, runner_ctx):
                 error=f"Baseline not found: {step.baseline_id}",
             )
 
-    # Determine comparison mode
     mode = step.compare_mode
     if mode == "exact":
         ext = os.path.splitext(new_file)[1].lower()
@@ -115,8 +106,30 @@ def execute(step, runner_ctx):
         return _compare_exact(step, new_file, baseline_path)
 
 
-def _compare_exact(step, file_path: str, baseline_path) -> StepResult:
-    """Binary comparison."""
+def _find_new_file(dir_path, old_snapshot, timeout=30.0):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            current = {}
+            for name in os.listdir(dir_path):
+                full = os.path.join(dir_path, name)
+                if os.path.isfile(full):
+                    current[name] = os.path.getmtime(full)
+
+            new_files = [
+                name for name in current
+                if name not in old_snapshot
+            ]
+            if new_files:
+                newest = max(new_files, key=lambda n: current[n])
+                return os.path.join(dir_path, newest)
+        except OSError:
+            pass
+        time.sleep(0.5)
+    return None
+
+
+def _compare_exact(step, file_path, baseline_path):
     try:
         actual = open(file_path, "rb").read()
         expected = open(baseline_path, "rb").read()
@@ -134,12 +147,10 @@ def _compare_exact(step, file_path: str, baseline_path) -> StepResult:
     error = f"Files differ at byte {diff_pos} — {os.path.basename(file_path)}"
     if len(actual) != len(expected):
         error += f" (actual: {len(actual)} bytes, expected: {len(expected)} bytes)"
-
     return StepResult(step=step, passed=False, error=error)
 
 
-def _compare_image(step, file_path: str, baseline_path) -> StepResult:
-    """Image comparison with similarity threshold."""
+def _compare_image(step, file_path, baseline_path):
     try:
         actual = Image.open(file_path)
         expected = Image.open(str(baseline_path))
@@ -147,23 +158,22 @@ def _compare_image(step, file_path: str, baseline_path) -> StepResult:
         return StepResult(step=step, passed=False, error=f"Failed to open images: {e}")
 
     result = compare_regions(actual, expected, threshold=step.similarity_threshold)
-
     if result["similar"]:
         return StepResult(
             step=step, passed=True,
             model_response=f"Image similarity: {result['similarity']:.1%} — {os.path.basename(file_path)}",
         )
-    else:
-        return StepResult(
-            step=step, passed=False,
-            error=f"Image differs (similarity: {result['similarity']:.1%}, threshold: {step.similarity_threshold:.1%}) — {os.path.basename(file_path)}",
-        )
+    return StepResult(
+        step=step, passed=False,
+        error=f"Image differs (similarity: {result['similarity']:.1%}) — {os.path.basename(file_path)}",
+    )
 
 
 definition = StepDefinition(
-    name="compare_new_file",
-    description="Find a new file in a watched directory and compare against a baseline",
+    name="compare_saved_file",
+    description="Watch a directory for a new file and compare against a baseline",
     fields=[
+        FieldDef("file_path", "string", required=True),
         FieldDef("baseline_id", "string", required=True),
         FieldDef("compare_mode", "string"),
         FieldDef("similarity_threshold", "number"),

@@ -100,6 +100,8 @@ class Agent:
             self.actions.click(px, py, clicks=2)
         elif click_type == "right_click":
             self.actions.click(px, py, button="right")
+        elif click_type == "middle_click":
+            self.actions.click(px, py, button="middle")
 
         # Restore cursor to where it was (builder UX)
         if saved_pos:
@@ -134,6 +136,8 @@ class Agent:
                     self.actions.click(px, py, clicks=2)
                 elif click_type == "right_click":
                     self.actions.click(px, py, button="right")
+                elif click_type == "middle_click":
+                    self.actions.click(px, py, button="middle")
 
                 return StepResult(
                     step=step,

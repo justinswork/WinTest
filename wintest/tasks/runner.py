@@ -56,6 +56,9 @@ class TestRunner:
         variables = VariableStore(test.variables)
         loop_counters: dict[int, int] = {}
 
+        # Pre-snapshot directories for compare_saved_file steps
+        self._snapshot_directories(test.steps, variables)
+
         idx = 0
         total = len(test.steps)
         while idx < total:
@@ -111,6 +114,7 @@ class TestRunner:
                         "variables": variables,
                         "loop_counters": loop_counters,
                         "current_step_index": idx,
+                        "progress_callback": progress_callback,
                     }
                     result = defn.execute(step, runner_ctx)
                     # Pick up any state changes from the step
@@ -191,6 +195,22 @@ class TestRunner:
             self._app_manager.close()
 
         return test_result
+
+    @staticmethod
+    def _snapshot_directories(steps, variables):
+        """Pre-snapshot directories for compare_saved_file steps."""
+        import json as _json
+        for step in steps:
+            if step.action == "compare_saved_file" and step.file_path:
+                dir_path = step.file_path
+                if os.path.isdir(dir_path):
+                    snapshot = {}
+                    for name in os.listdir(dir_path):
+                        full = os.path.join(dir_path, name)
+                        if os.path.isfile(full):
+                            snapshot[name] = os.path.getmtime(full)
+                    variables.set(f"_dir_snapshot_{dir_path}", _json.dumps(snapshot))
+                    logger.info("Directory snapshot: %d files in %s", len(snapshot), dir_path)
 
     @staticmethod
     def _create_report_dir(test_name: str) -> str:

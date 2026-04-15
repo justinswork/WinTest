@@ -128,6 +128,19 @@ const FIELD_RENDERERS: Record<string, FieldRenderer> = {
       onChange={e => update('repeat', parseInt(e.target.value) || 0)}
     />
   ),
+  click_type: (step, _field, update, t) => (
+    <select
+      className="input"
+      value={step.click_type}
+      onChange={e => update('click_type', e.target.value)}
+      style={{ width: 'auto' }}
+    >
+      <option value="click">{t('stepForm.clickLeft')}</option>
+      <option value="double_click">{t('stepForm.clickDouble')}</option>
+      <option value="right_click">{t('stepForm.clickRight')}</option>
+      <option value="middle_click">{t('stepForm.clickMiddle')}</option>
+    </select>
+  ),
   file_path: (step, _field, update, t) => (
     <input
       className="input"

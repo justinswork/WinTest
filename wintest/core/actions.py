@@ -39,5 +39,8 @@ class ActionExecutor:
         pyautogui.scroll(clicks, x, y)
 
     def wait(self, seconds: float):
-        """Wait for a duration before the next action."""
-        time.sleep(seconds)
+        """Wait for a duration, checking for interruption every 0.5s."""
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            remaining = deadline - time.time()
+            time.sleep(min(0.5, remaining))

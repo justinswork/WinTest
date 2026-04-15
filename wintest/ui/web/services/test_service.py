@@ -68,6 +68,7 @@ def get_test(filename: str, settings=None) -> TestModel:
             repeat=step.repeat,
             click_x=step.click_x,
             click_y=step.click_y,
+            click_type=step.click_type,
             region=step.region,
             baseline_id=step.baseline_id,
             similarity_threshold=step.similarity_threshold,
@@ -138,6 +139,8 @@ def save_test(test: TestModel, filename: str | None = None) -> str:
             step_data["click_x"] = step.click_x
         if step.click_y is not None:
             step_data["click_y"] = step.click_y
+        if step.click_type != "click":
+            step_data["click_type"] = step.click_type
         if step.region is not None:
             step_data["region"] = step.region
         if step.baseline_id is not None:

@@ -7,14 +7,14 @@ from wintest.tasks.schema import Step, TestDefinition
 from wintest.tasks.validator import validate_test
 
 EXPECTED_ACTIONS = {
-    "click", "compare_file", "compare_new_file", "double_click", "hotkey",
+    "click", "compare_saved_file", "double_click", "hotkey",
     "launch_application", "loop", "press_key", "right_click", "scroll",
-    "set_variable", "type", "verify", "verify_screenshot", "watch_directory", "wait",
+    "set_variable", "type", "verify", "verify_screenshot", "wait",
 }
 
 RUNNER_STEPS = {
-    "launch_application", "loop", "set_variable",
-    "verify_screenshot", "compare_file", "compare_new_file", "watch_directory",
+    "launch_application", "loop", "set_variable", "verify_screenshot",
+    "compare_saved_file",
 }
 
 

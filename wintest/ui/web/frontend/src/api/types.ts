@@ -19,6 +19,7 @@ export interface Step {
   repeat: number;
   click_x: number | null;
   click_y: number | null;
+  click_type: string;
   region: number[] | null;
   baseline_id: string | null;
   similarity_threshold: number;
@@ -138,6 +139,7 @@ export interface WsMessage {
   summary?: { total: number; passed: number; failed: number };
   message?: string;
   status?: string;
+  directory?: string;
   current_step?: number;
   step_results?: StepResultData[];
   source_file?: string;
@@ -190,6 +192,7 @@ export function newStep(): Step {
     repeat: 0,
     click_x: null,
     click_y: null,
+    click_type: 'click',
     region: null,
     baseline_id: null,
     similarity_threshold: 0.90,

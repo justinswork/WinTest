@@ -19,9 +19,8 @@ const STATUS_KEYS: Record<string, string> = {
 export function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { modelStatus, loadModel, fetchStatus, handleWsMessage, cancelRun, status, testName, currentStep, totalSteps, stepResults, currentLabel, error } = useExecutionStore();
+  const { fetchStatus, handleWsMessage, cancelRun, status, testName, currentStep, totalSteps, stepResults, currentLabel, error } = useExecutionStore();
   const [reports, setReports] = useState<ReportSummary[]>([]);
-  const [modelName, setModelName] = useState<string>('');
   const [workspaceConfigured, setWorkspaceConfigured] = useState(true);
 
   useExecutionWebSocket(handleWsMessage);
@@ -34,7 +33,6 @@ export function Dashboard() {
         reportApi.list().then(setReports);
       }
     });
-    settingsApi.getModel().then(data => setModelName(data.model_path));
   }, [fetchStatus]);
 
   const handleDeleteReport = async (e: React.MouseEvent, reportId: string) => {
@@ -67,31 +65,6 @@ export function Dashboard() {
           </button>
         </div>
       )}
-
-      <div className="section">
-        <div className="section-header">
-          <h2>{t('dashboard.modelStatus')}</h2>
-        </div>
-        <div className="model-status-card">
-          <div className="model-status-info">
-            <div className="model-status-row">
-              <span className="model-status-label">{t('dashboard.statusLabel')}</span>
-              <span className={`model-indicator model-${modelStatus}`} />
-              <span>{modelStatus === 'loaded' ? t('dashboard.modelLoaded') : modelStatus === 'loading' ? t('dashboard.modelLoading') : t('dashboard.modelNotLoaded')}</span>
-              {modelStatus === 'not_loaded' && (
-                <button className="btn btn-secondary btn-sm" onClick={loadModel}>{t('dashboard.preloadModel')}</button>
-              )}
-            </div>
-            <div className="model-status-row">
-              <span className="model-status-label">{t('dashboard.modelLabel')}</span>
-              <span>{modelName || '—'}</span>
-            </div>
-          </div>
-          <button className="btn-icon" onClick={() => navigate('/settings')} title={t('dashboard.changeModel')}>
-            <Settings size={16} />
-          </button>
-        </div>
-      </div>
 
       {showExecution && (
         <div className="section">

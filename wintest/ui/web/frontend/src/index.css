@@ -1485,6 +1485,32 @@ select.input {
   pointer-events: none;
 }
 
+.builder-watching-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  color: #92400e;
+  margin-bottom: 0.5rem;
+}
+
+.builder-watching-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 .builder-confirm-bar {
   display: flex;
   align-items: center;

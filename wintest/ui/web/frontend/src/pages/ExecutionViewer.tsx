@@ -83,6 +83,13 @@ export function ExecutionViewer() {
         <div className="info-banner">{t('execution.modelLoading')}</div>
       )}
 
+      {store.watchingDirectory && (
+        <div className="builder-watching-banner">
+          <span className="builder-watching-dot" />
+          {t('execution.watchingDirectory', { dir: store.watchingDirectory })}
+        </div>
+      )}
+
       {store.error && (
         <div className="error-banner">{store.error}</div>
       )}

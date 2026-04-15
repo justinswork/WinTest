@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Play, Trash2, Save, Square, Check, ChevronDown, ChevronRight, Camera, FolderOpen } from 'lucide-react';
+import { Play, Trash2, Save, Square, Plus, ChevronDown, ChevronRight, Camera, FolderOpen } from 'lucide-react';
 import { builderApi, baselineApi, fileApi } from '../api/client';
 import { AppPathInput } from '../components/common/AppPathInput';
 import { VariablesEditor } from '../components/tasks/VariablesEditor';
@@ -40,6 +40,7 @@ export function TestBuilder() {
   const inputRef = useRef<HTMLInputElement>(null);
   const screenshotRef = useRef<HTMLImageElement>(null);
   const [action, setAction] = useState('launch_application');
+  const [clickType, setClickType] = useState('click');
   const [target, setTarget] = useState('');
   const [text, setText] = useState('');
   const [key, setKey] = useState('');
@@ -56,6 +57,7 @@ export function TestBuilder() {
   const [similarityThreshold, setSimilarityThreshold] = useState(0.90);
   const [filePath, setFilePath] = useState('');
   const [compareMode, setCompareMode] = useState('exact');
+  const [watchingDir, setWatchingDir] = useState<{ stepIndex: number; dir: string; snapshot: Record<string, number> } | null>(null);
   const [variableName, setVariableName] = useState('');
   const [variableValue, setVariableValue] = useState('');
   const [loopTarget, setLoopTarget] = useState(1);
@@ -75,6 +77,7 @@ export function TestBuilder() {
       setPendingStep(null);
       setPickMode(false);
       setShowRunMenu(false);
+      setWatchingDir(null);
       setAction('launch_application');
       setTarget('');
       setText('');
@@ -163,10 +166,11 @@ export function TestBuilder() {
 
     try {
       const stepData: Record<string, unknown> = {
-        action,
-        description: description || `${action} at (${Math.round(clickX * 100)}%, ${Math.round(clickY * 100)}%)`,
+        action: 'click',
+        description: description || `${clickType} at (${Math.round(clickX * 100)}%, ${Math.round(clickY * 100)}%)`,
         click_x: clickX,
         click_y: clickY,
+        click_type: clickType,
       };
       const result = await builderApi.step(stepData);
       const builderStep: BuilderStep = {
@@ -179,10 +183,20 @@ export function TestBuilder() {
         screenshot_base64: result.screenshot_base64,
       };
 
-      // Show post-click screenshot in viewer, save pre-click on step
-      setPendingStep({ step: builderStep, stepData });
+      // Coordinate clicks are accepted immediately — no confirmation needed
+      setSteps(prev => [...prev, builderStep]);
       setScreenshot(result.post_screenshot_base64 ?? result.screenshot_base64 ?? null);
       setSelectedStep(null);
+      // Reset for next step
+      setAction('click');
+      setTarget('');
+      setDescription('');
+      setVariableName('');
+      setVariableValue('');
+      setLoopTarget(1);
+      setRepeatCount(1);
+      setFilePath('');
+      setCompareMode('exact');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Step failed';
       showToast(msg, 'error');
@@ -299,6 +313,9 @@ export function TestBuilder() {
     const step: Record<string, unknown> = { action, description: description || undefined };
     switch (action) {
       case 'click':
+        step.target = target;
+        step.click_type = clickType;
+        break;
       case 'double_click':
       case 'right_click':
       case 'verify':
@@ -335,15 +352,8 @@ export function TestBuilder() {
       case 'verify_screenshot':
         // Handled separately via handleSaveBaseline
         break;
-      case 'compare_file':
+      case 'compare_saved_file':
         step.file_path = filePath;
-        step.compare_mode = compareMode;
-        step.similarity_threshold = similarityThreshold;
-        break;
-      case 'watch_directory':
-        step.file_path = filePath;
-        break;
-      case 'compare_new_file':
         step.compare_mode = compareMode;
         step.similarity_threshold = similarityThreshold;
         break;
@@ -365,6 +375,7 @@ export function TestBuilder() {
     setPendingStep(null);
     // Reset for next step
     setAction('click');
+    setClickType('click');
     setTarget('');
     setText('');
     setKey('');
@@ -391,84 +402,63 @@ export function TestBuilder() {
     }
   };
 
-  const handleSaveStep = async () => {
-    // For compare_file, save the file as a baseline first
-    if (action === 'compare_file' && filePath) {
-      try {
-        const baselineName = description || `file_baseline_step${steps.length + 1}`;
-        const result = await baselineApi.saveFromFile(filePath, baselineName);
-        const stepData = buildStepFromForm();
-        stepData.baseline_id = result.baseline_id;
-        const builderStep: BuilderStep = {
-          step: buildStepRecord(stepData),
-          passed: true,
-          error: null,
-          coordinates: null,
-          model_response: null,
-          duration_seconds: 0,
-          screenshot_base64: null,
-        };
-        setSteps(prev => [...prev, builderStep]);
-        showToast(t('builder.baselineSaved'));
-      } catch {
-        showToast(t('builder.baselineSaveFailed'), 'error');
-        return;
-      }
-    } else if (action === 'compare_new_file') {
-      // Find the watch_directory step to get the dir and snapshot
-      const watchStep = [...steps].reverse().find(s => s.step.action === 'watch_directory');
-      if (!watchStep?.step.file_path) {
-        showToast(t('builder.noWatchDirectory'), 'error');
+  const handleCaptureBaseline = async (stepIndex: number) => {
+    const s = steps[stepIndex];
+    if (!s.step.file_path) return;
+
+    try {
+      const detected = await builderApi.detectNewFile(s.step.file_path, {});
+      if (!detected.new_files || detected.new_files.length === 0) {
+        showToast(t('builder.noNewFile'), 'error');
         return;
       }
 
-      try {
-        // Find the most recent file in the watched directory
-        const detected = await builderApi.detectNewFile(watchStep.step.file_path, {});
-        if (!detected.new_files || detected.new_files.length === 0) {
-          showToast(t('builder.noNewFile'), 'error');
-          return;
-        }
+      const newest = detected.new_files.sort((a: { mtime: number }, b: { mtime: number }) => b.mtime - a.mtime)[0];
+      const baselineName = s.step.description || `file_baseline_step${stepIndex + 1}`;
+      const result = await baselineApi.saveFromFile(newest.path, baselineName);
 
-        // Pick the newest file
-        const newest = detected.new_files.sort((a: { mtime: number }, b: { mtime: number }) => b.mtime - a.mtime)[0];
-        const baselineName = description || `file_baseline_step${steps.length + 1}`;
-        const result = await baselineApi.saveFromFile(newest.path, baselineName);
-
-        const stepData = buildStepFromForm();
-        stepData.baseline_id = result.baseline_id;
-        const builderStep: BuilderStep = {
-          step: buildStepRecord(stepData),
-          passed: true,
-          error: null,
-          coordinates: null,
-          model_response: `Baseline from: ${newest.name}`,
-          duration_seconds: 0,
-          screenshot_base64: null,
-        };
-        setSteps(prev => [...prev, builderStep]);
-        showToast(`${t('builder.baselineSaved')} — ${newest.name}`);
-      } catch {
-        showToast(t('builder.baselineSaveFailed'), 'error');
-        return;
-      }
-    } else {
-      const stepData = buildStepFromForm();
-      const builderStep: BuilderStep = {
-        step: buildStepRecord(stepData),
-        passed: true,
-        error: null,
-        coordinates: null,
-        model_response: null,
-        duration_seconds: 0,
-        screenshot_base64: null,
-      };
-      setSteps(prev => [...prev, builderStep]);
+      setSteps(prev => prev.map((step, i) =>
+        i === stepIndex
+          ? { ...step, step: { ...step.step, baseline_id: result.baseline_id }, model_response: `Baseline: ${newest.name}` }
+          : step
+      ));
+      showToast(`${t('builder.baselineSaved')} — ${newest.name}`);
+    } catch {
+      showToast(t('builder.baselineSaveFailed'), 'error');
     }
-    setSelectedStep(steps.length);
+  };
+
+  const handleSaveStep = async () => {
+    const stepData = buildStepFromForm();
+    const builderStep: BuilderStep = {
+      step: buildStepRecord(stepData),
+      passed: true,
+      error: null,
+      coordinates: null,
+      model_response: null,
+      duration_seconds: 0,
+      screenshot_base64: null,
+    };
+    const newIndex = steps.length;
+    setSteps(prev => [...prev, builderStep]);
+    setSelectedStep(newIndex);
+
+    // Start watching directory if this is a compare_saved_file step without a baseline
+    if (action === 'compare_saved_file' && filePath && !stepData.baseline_id) {
+      try {
+        // Snapshot current directory contents
+        const detected = await builderApi.detectNewFile(filePath, {});
+        const currentSnapshot: Record<string, number> = {};
+        for (const f of detected.new_files || []) {
+          currentSnapshot[f.name] = f.mtime;
+        }
+        setWatchingDir({ stepIndex: newIndex, dir: filePath, snapshot: currentSnapshot });
+      } catch { /* ignore */ }
+    }
 
     // Reset for next step
     setAction('click');
+    setClickType('click');
     setTarget('');
     setText('');
     setKey('');
@@ -486,10 +476,6 @@ export function TestBuilder() {
 
   const handleExecute = async () => {
     // For file comparison steps, redirect to save flow
-    if (action === 'compare_file' || action === 'compare_new_file') {
-      await handleSaveStep();
-      return;
-    }
 
     setExecuting(true);
     try {
@@ -560,6 +546,43 @@ export function TestBuilder() {
     return () => window.removeEventListener('keydown', handler);
   }, [pickMode]);
 
+  // Directory watcher: poll for new files when a compare_saved_file step has no baseline
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
+
+  useEffect(() => {
+    if (!watchingDir) return;
+    const { stepIndex, dir, snapshot } = watchingDir;
+
+    const interval = setInterval(async () => {
+      // Check if step still exists and still needs a baseline
+      const currentSteps = stepsRef.current;
+      if (stepIndex >= currentSteps.length || currentSteps[stepIndex]?.step.baseline_id) {
+        setWatchingDir(null);
+        return;
+      }
+
+      try {
+        const detected = await builderApi.detectNewFile(dir, snapshot);
+        if (detected.new_files && detected.new_files.length > 0) {
+          const newest = detected.new_files.sort((a: { mtime: number }, b: { mtime: number }) => b.mtime - a.mtime)[0];
+          const baselineName = currentSteps[stepIndex]?.step.description || `file_baseline_step${stepIndex + 1}`;
+          const result = await baselineApi.saveFromFile(newest.path, baselineName);
+
+          setSteps(prev => prev.map((s, i) =>
+            i === stepIndex
+              ? { ...s, step: { ...s.step, baseline_id: result.baseline_id }, model_response: `Baseline: ${newest.name}` }
+              : s
+          ));
+          setWatchingDir(null);
+          showToast(`${t('builder.baselineSaved')} — ${newest.name}`);
+        }
+      } catch { /* polling error — ignore and retry */ }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [watchingDir]);
+
   useEffect(() => {
     if (!showRunMenu) return;
     const handler = (e: MouseEvent) => {
@@ -577,6 +600,11 @@ export function TestBuilder() {
     else if (selectedStep !== null && selectedStep > index) setSelectedStep(selectedStep - 1);
     if (expandedStep === index) setExpandedStep(null);
     else if (expandedStep !== null && expandedStep > index) setExpandedStep(expandedStep - 1);
+    // Stop watcher if this step was being watched
+    if (watchingDir?.stepIndex === index) setWatchingDir(null);
+    else if (watchingDir && watchingDir.stepIndex > index) {
+      setWatchingDir({ ...watchingDir, stepIndex: watchingDir.stepIndex - 1 });
+    }
   };
 
   const handleUpdateStep = (index: number, updated: BuilderStep) => {
@@ -584,6 +612,13 @@ export function TestBuilder() {
   };
 
   const handleSaveAsTest = async () => {
+    // Check for compare_saved_file steps without baselines
+    const missingBaseline = steps.find(s => s.step.action === 'compare_saved_file' && !s.step.baseline_id);
+    if (missingBaseline) {
+      showToast(t('builder.missingBaseline'), 'error');
+      return;
+    }
+
     const testName = window.prompt(t('builder.testNamePrompt'), 'New Test');
     if (!testName) return;
     try {
@@ -615,10 +650,20 @@ export function TestBuilder() {
   const renderFieldsForAction = () => {
     switch (action) {
       case 'click':
-      case 'double_click':
-      case 'right_click':
         return (
           <>
+            <select
+              className="input"
+              value={clickType}
+              onChange={e => setClickType(e.target.value)}
+              disabled={executing}
+              style={{ width: 'auto' }}
+            >
+              <option value="click">{t('builder.clickLeft')}</option>
+              <option value="double_click">{t('builder.clickDouble')}</option>
+              <option value="right_click">{t('builder.clickRight')}</option>
+              <option value="middle_click">{t('builder.clickMiddle')}</option>
+            </select>
             <button
               className="btn btn-secondary"
               onClick={handleStartPick}
@@ -797,7 +842,7 @@ export function TestBuilder() {
             </label>
           </>
         );
-      case 'watch_directory':
+      case 'compare_saved_file':
         return (
           <>
             <input
@@ -812,44 +857,6 @@ export function TestBuilder() {
               className="btn-icon"
               onClick={async () => {
                 try { setFilePath(await fileApi.pickFolder()); } catch { /* cancelled */ }
-              }}
-              disabled={executing}
-              title={t('appPath.browse')}
-            >
-              <FolderOpen size={16} />
-            </button>
-          </>
-        );
-      case 'compare_new_file':
-        return (
-          <>
-            <select
-              className="input"
-              value={compareMode}
-              onChange={e => setCompareMode(e.target.value)}
-              disabled={executing}
-              style={{ width: 'auto' }}
-            >
-              <option value="exact">{t('builder.modeExact')}</option>
-              <option value="image">{t('builder.modeImage')}</option>
-            </select>
-          </>
-        );
-      case 'compare_file':
-        return (
-          <>
-            <input
-              ref={inputRef}
-              className="input flex-1"
-              placeholder={t('builder.filePathPlaceholder')}
-              value={filePath}
-              onChange={e => setFilePath(e.target.value)}
-              disabled={executing}
-            />
-            <button
-              className="btn-icon"
-              onClick={async () => {
-                try { setFilePath(await fileApi.pickFile()); } catch { /* cancelled */ }
               }}
               disabled={executing}
               title={t('appPath.browse')}
@@ -951,31 +958,52 @@ export function TestBuilder() {
             onChange={e => setDescription(e.target.value)}
             disabled={executing}
           />
-          <div className="builder-run-split" ref={runMenuRef}>
-            <button className="btn btn-primary" onClick={handleExecute} disabled={executing}>
-              <Play size={16} />{executing ? t('builder.executing') : t('builder.addAndRun')}
-            </button>
-            <button
-              className="btn btn-primary builder-run-toggle"
-              onClick={() => setShowRunMenu(!showRunMenu)}
-              disabled={executing}
-            >
-              <ChevronDown size={14} />
-            </button>
-            {showRunMenu && (
-              <div className="builder-run-dropdown">
-                <button className="builder-run-dropdown-item" onClick={() => { handleSaveStep(); setShowRunMenu(false); }}>
-                  <Check size={14} />{t('builder.addOnly')}
+          {(() => {
+            const interactive = ['click', 'double_click', 'right_click', 'type', 'launch_application'].includes(action);
+            const primaryAction = interactive ? handleExecute : handleSaveStep;
+            const primaryLabel = interactive
+              ? (executing ? t('builder.executing') : t('builder.addAndRun'))
+              : t('builder.addStep');
+            const primaryIcon = interactive ? <Play size={16} /> : <Plus size={16} />;
+            const secondaryAction = interactive ? handleSaveStep : handleExecute;
+            const secondaryLabel = interactive ? t('builder.addOnly') : t('builder.addAndRun');
+            const secondaryIcon = interactive ? <Plus size={14} /> : <Play size={14} />;
+
+            return (
+              <div className="builder-run-split" ref={runMenuRef}>
+                <button className="btn btn-primary" onClick={primaryAction} disabled={executing}>
+                  {primaryIcon}{primaryLabel}
                 </button>
+                <button
+                  className="btn btn-primary builder-run-toggle"
+                  onClick={() => setShowRunMenu(!showRunMenu)}
+                  disabled={executing}
+                >
+                  <ChevronDown size={14} />
+                </button>
+                {showRunMenu && (
+                  <div className="builder-run-dropdown">
+                    <button className="builder-run-dropdown-item" onClick={() => { secondaryAction(); setShowRunMenu(false); }}>
+                      {secondaryIcon}{secondaryLabel}
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
         </div>
       )}
 
       {/* Tags and Variables */}
       {active && (
         <BuilderMetadata tags={tags} onTagsChange={setTags} variables={variables} onVariablesChange={setVariables} />
+      )}
+
+      {active && watchingDir && (
+        <div className="builder-watching-banner">
+          <span className="builder-watching-dot" />
+          {t('builder.watchingDirectory', { dir: watchingDir.dir })}
+        </div>
       )}
 
       {active && (
@@ -998,7 +1026,12 @@ export function TestBuilder() {
                       {s.step.text && <> &mdash; "{s.step.text}"</>}
                       {s.step.app_path && <> &mdash; {s.step.app_path}</>}
                     </span>
-                    <StatusBadge passed={s.passed} />
+                    {s.step.action === 'compare_saved_file' && (
+                      <span className={`badge-sm ${s.step.baseline_id ? 'badge-pass' : 'badge-fail'}`} title={s.step.baseline_id || t('builder.noBaselineYet')}>
+                        {s.step.baseline_id ? t('builder.baselineReady') : t('builder.waiting')}
+                      </span>
+                    )}
+                    {s.step.action !== 'compare_saved_file' && <StatusBadge passed={s.passed} />}
                     <button className="btn-icon" onClick={(e) => { e.stopPropagation(); setExpandedStep(expandedStep === i ? null : i); }} title={t('builder.expandDetails')}>
                       {expandedStep === i ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </button>
@@ -1007,7 +1040,7 @@ export function TestBuilder() {
                     </button>
                   </div>
                   {expandedStep === i && (
-                    <StepDetail step={s} index={i} onChange={handleUpdateStep} />
+                    <StepDetail step={s} index={i} onChange={handleUpdateStep} onCaptureBaseline={handleCaptureBaseline} />
                   )}
                 </div>
               ))
@@ -1159,10 +1192,11 @@ function BuilderMetadata({ tags, onTagsChange, variables, onVariablesChange }: {
   );
 }
 
-function StepDetail({ step, index, onChange }: {
+function StepDetail({ step, index, onChange, onCaptureBaseline }: {
   step: BuilderStep;
   index: number;
   onChange: (index: number, updated: BuilderStep) => void;
+  onCaptureBaseline?: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const s = step.step;
@@ -1293,6 +1327,18 @@ function StepDetail({ step, index, onChange }: {
       {step.error && (
         <div className="builder-detail-row builder-step-error">
           <span className="builder-detail-label">{t('builder.detail.error')}</span> {step.error}
+        </div>
+      )}
+
+      {s.action === 'compare_saved_file' && onCaptureBaseline && (
+        <div className="builder-detail-row" style={{ marginTop: '0.5rem' }}>
+          {s.baseline_id ? (
+            <span className="text-muted">{t('builder.detail.baselineSet')}: {s.baseline_id}</span>
+          ) : (
+            <button className="btn btn-primary btn-sm" onClick={() => onCaptureBaseline(index)}>
+              {t('builder.captureBaseline')}
+            </button>
+          )}
         </div>
       )}
     </div>

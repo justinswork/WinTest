@@ -18,6 +18,7 @@ interface ExecutionState {
   currentStep: number;
   totalSteps: number;
   currentLabel: string | null;
+  watchingDirectory: string | null;
   stepResults: StepResultData[];
   logEntries: LogEntry[];
   modelStatus: 'not_loaded' | 'loading' | 'loaded';
@@ -41,6 +42,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
   currentStep: 0,
   totalSteps: 0,
   currentLabel: null,
+  watchingDirectory: null,
   stepResults: [],
   logEntries: [],
   modelStatus: 'not_loaded',
@@ -59,6 +61,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
           currentStep: 0,
           stepResults: [],
           logEntries: [],
+          watchingDirectory: null,
           error: null,
         });
         break;
@@ -73,6 +76,7 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
           currentStep: 0,
           stepResults: [],
           logEntries: [],
+          watchingDirectory: null,
           error: null,
         });
         break;
@@ -126,6 +130,12 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
             timestamp: msg.timestamp ?? '',
           }],
         }));
+        break;
+      case 'watching_directory':
+        set({ watchingDirectory: msg.directory ?? null });
+        break;
+      case 'watching_directory_done':
+        set({ watchingDirectory: null });
         break;
       case 'model_loading':
         set({ modelStatus: 'loading' });

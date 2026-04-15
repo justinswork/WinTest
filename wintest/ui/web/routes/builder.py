@@ -26,6 +26,7 @@ class BuilderStepRequest(BaseModel):
     expected: bool = True
     click_x: float | None = None
     click_y: float | None = None
+    click_type: str = "click"
 
 
 @router.post("/start")
@@ -63,6 +64,7 @@ async def execute_step(request: BuilderStepRequest):
         expected=request.expected,
         click_x=request.click_x,
         click_y=request.click_y,
+        click_type=request.click_type,
     )
 
     result = execution_service.execute_builder_step(step, _builder)
@@ -123,7 +125,7 @@ async def detect_new_file(request: DetectNewFileRequest):
 
     new_files = []
     for name, mtime in current.items():
-        if name not in request.known_files or mtime > request.known_files.get(name, 0):
+        if name not in request.known_files:
             new_files.append({"name": name, "path": os.path.join(request.dir_path, name), "mtime": mtime})
 
     return {"new_files": new_files}
