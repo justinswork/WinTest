@@ -78,6 +78,13 @@ AI-based element grounding (clicking by description) works but is not reliable e
 ## Retry Failed Tests in Suites — Impact: 6 | Difficulty: 3
 Re-run only the failed tests from a completed suite run, instead of re-running the entire suite.
 
+## Test-Level Timeout — Impact: 7 | Difficulty: 3
+Kill a test run if it exceeds a maximum duration. Step-level timeouts already exist, but a hung step that keeps retrying, or a loop that never terminates, can block the scheduler indefinitely.
+
+Each test can specify its own `timeout_seconds` in the YAML (and as a field in the Test Editor), since a quick smoke test shouldn't share the same ceiling as a long export-and-compare regression test. If a test doesn't set one, use a workspace-wide default — 5 minutes seems like a safe starting point for typical UI tests without interrupting legitimately long-running ones. Suites could optionally define their own default that cascades to tests that don't set one.
+
+When the timeout hits, mark the test as failed with a "Test exceeded timeout of Xm" error and proceed to the next test in the suite.
+
 ## User-Defined Custom Steps — Impact: 6 | Difficulty: 6
 Allow users to define their own custom step types (composite steps or macros) that combine multiple built-in steps into a reusable action. This would reduce repetition across tests. Needs a macro definition format and execution model.
 
