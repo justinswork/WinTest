@@ -2,38 +2,57 @@
 
 # wintest
 
-AI-powered Windows UI testing tool using [ShowUI-2B](https://huggingface.co/OpenGVLab/ShowUI-2B). Define test tasks in simple YAML files, point them at any desktop application, and let an AI agent execute them autonomously — taking screenshots, finding UI elements, clicking, typing, scrolling, and verifying results.
+**Automated UI testing for Windows desktop applications.**
 
-Think of it as Selenium/Playwright, but for **any desktop application**, powered by visual AI instead of DOM selectors.
+Record tests by clicking through your application, replay them to catch regressions, and schedule them to run automatically. wintest drives any Windows GUI — office suites, engineering tools, in-house apps — without needing source access, accessibility APIs, or DOM selectors.
+
+Think of it as Selenium/Playwright, but for **any desktop application**.
 
 ---
 
-## How It Works
+## What you can do
 
-1. You define a test task in YAML — what app to launch, what steps to perform
-2. wintest launches the application and captures a screenshot
-3. ShowUI-2B (a vision-language model running locally on your GPU) analyzes the screenshot and locates UI elements
-4. The agent executes actions (click, type, scroll, etc.) and verifies expected results
-5. A detailed report is generated with annotated screenshots of every step
+- **Build tests visually.** Open the Test Builder, launch your app, and click through it. wintest captures each click as a test step with pixel-exact coordinates.
+- **Assert on real output.** Compare files your app produces against saved baselines (exact byte match or pixel similarity for images), or compare a region of the screen against a saved screenshot.
+- **Group and schedule.** Organize tests into suites, then create pipelines that run a test or suite on the days and times you choose.
+- **Rerun and inspect.** Every run produces a report with per-step screenshots, pass/fail status, and timing. Export to PDF for sharing.
+- **See what's trending.** The Trends dashboard shows pass/fail history and duration over time for each test.
 
-No pixel matching or template matching — the model uses learned visual understanding.
+---
+
+## How it works
+
+1. **Record.** In the web UI, open the Test Builder and launch your application. Every click you make in the app's window becomes a test step. Add waits, keystrokes, typed text, and assertions alongside the clicks.
+2. **Replay.** Run the test and wintest replays your clicks at the captured coordinates, types the recorded text, and checks the assertions.
+3. **Report.** Each step produces a screenshot and a pass/fail result. Failures show exactly what went wrong, including file diffs and screenshot diffs.
+4. **Schedule.** Create a pipeline to run a test or suite on a recurring schedule (e.g., nightly at 10pm). A background scheduler process triggers runs automatically.
 
 ---
 
 ## Features
 
-- **YAML task definitions** — no code required, describe tests in plain language
-- **Built-in support for test actions** — click, double-click, right-click, type, key press, hotkey, scroll, wait, verify...
-- **Automatic retry** — configurable retry attempts with delay for flaky element detection
-- **Application management** — launch, focus, and close applications automatically
-- **Error recovery** — dismiss unexpected dialogs, re-focus windows
-- **Rich reporting** — HTML and JSON reports with annotated screenshots at every step
-- **CLI interface** — `wintest run`, `wintest validate`, `wintest interactive`
-- **Web UI** — browser-based dashboard, task editor, live execution viewer, and report browser
+- **Test Builder** — record tests by clicking through your application
+- **Test Editor** — fine-tune recorded tests or author them from scratch in YAML
+- **Test Suites** — group related tests; run the whole suite with one click
+- **Pipelines** — schedule tests or suites to run automatically on chosen days/times
+- **Assertions** — file comparison (exact / image similarity), screenshot region comparison
+- **Variables** — `{{placeholder}}` substitution across steps for reusable test data
+- **Loops** — repeat a block of steps N times or while a condition holds
+- **Retry** — configurable retry-with-delay on flaky steps
+- **Results & trends** — per-step screenshots, pass/fail history, duration charts, PDF export
+- **Application management** — launch, focus, and close apps as part of a test
+- **CLI and web UI** — run tests from either; the web UI is the primary interface
 
----
+### Supported step types
+`click`, `double_click`, `right_click`, `type`, `press_key`, `hotkey`, `scroll`, `wait`, `launch_application`, `verify`, `verify_screenshot`, `compare_saved_file`, `set_variable`, `loop`
 
-## Hardware Requirements
+### Optional: AI-driven element targeting
+
+wintest can optionally use a vision-language model (ShowUI-2B by default; Qwen2.5-VL also supported) to locate UI elements by description rather than coordinates — e.g., `click "Save button"`. This is useful when a UI layout may shift between runs, but coordinate-based clicks are faster, more deterministic, and recommended for most tests. The AI model is loaded lazily and only when a step actually needs it.
+
+#### Hardware requirements
+
+Only applies if you use AI-driven element targeting. Coordinate-based tests run on any Windows machine.
 
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
@@ -42,29 +61,27 @@ No pixel matching or template matching — the model uses learned visual underst
 | **Disk** | ~5 GB free (model weights) | ~10 GB free |
 | **CUDA** | CUDA 12.4+ | CUDA 12.4+ |
 
-The model runs in 4-bit quantization (NF4) to fit within consumer GPU memory. An RTX 3060 (12 GB) or equivalent is the baseline tested configuration.
-
-**Not supported:** CPU-only execution. A CUDA-capable NVIDIA GPU is required.
+The model runs in 4-bit quantization (NF4) to fit within consumer GPU memory. An RTX 3060 (12 GB) or equivalent is the baseline tested configuration. CPU-only execution is not supported for AI features.
 
 ---
 
 ## Setup
 
-### 1. Install PyTorch with CUDA
-
-PyTorch must be installed separately with CUDA support — it is not available from the default PyPI index.
-
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-```
-
-### 2. Install wintest
+### 1. Install wintest
 
 ```bash
 pip install -e .
 ```
 
-### 3. (Optional) Build the web UI frontend
+### 2. (Optional) Install PyTorch with CUDA for AI features
+
+Only needed if you plan to use AI-driven element targeting. Coordinate-based tests don't require it.
+
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+```
+
+### 3. Build the web UI frontend
 
 Requires [Node.js](https://nodejs.org/) (LTS recommended).
 
@@ -74,72 +91,90 @@ npm install
 npm run build
 ```
 
-On first run, the ShowUI-2B model weights (~4 GB) will be downloaded automatically from Hugging Face.
-
 ---
 
 ## Usage
 
-### CLI
-
-```bash
-# Run a test task
-wintest run examples/notepad_test.yaml
-
-# Validate a task file for errors
-wintest validate examples/notepad_test.yaml
-
-# Generate a template task file
-wintest init
-
-# List available action types
-wintest list-actions
-
-# Interactive mode — type natural language commands
-wintest interactive
-```
-
-### Web UI
+### Web UI (primary)
 
 ```bash
 wintest web
 ```
 
-Open **http://127.0.0.1:8080** in your browser. From the web UI you can:
+Open **http://127.0.0.1:8080** in your browser. On first launch, configure a workspace directory — wintest stores all tests, suites, pipelines, and results inside it.
 
-- **Dashboard** — see all tasks, model status, and recent reports
-- **Task Editor** — create and edit tasks with drag-and-drop step reordering
-- **Execution Viewer** — watch live step progress and screenshots as tasks run
-- **Report Browser** — view past reports with step-by-step details and screenshots
+### CLI
 
-### Task file format
-
-```yaml
-name: "Notepad Basic Test"
-application:
-  path: "notepad.exe"
-  wait_after_launch: 3
-
-steps:
-  - action: click
-    target: "File menu"
-    description: "Open the File menu"
-
-  - action: type
-    text: "Hello, World!"
-    description: "Type test text"
-
-  - action: verify
-    target: "text area containing 'Hello, World!'"
-    description: "Verify text was typed"
-
-settings:
-  retry_attempts: 3
-  retry_delay: 2
+```bash
+wintest run path/to/test.yaml              # Execute a test
+wintest run-test-suite path/to/suite.yaml  # Execute a suite
+wintest validate path/to/test.yaml         # Check a test for errors
+wintest init                               # Generate a template test
+wintest list-steps                         # Show available step types
+wintest scheduler                          # Run the pipeline scheduler
+wintest scheduler --install-startup        # Auto-start scheduler at Windows login
+wintest scheduler --stop                   # Stop a running scheduler
+wintest scheduler --status                 # Check scheduler status
 ```
 
-## Known Limitations
+### Scheduler
 
-- Single-monitor only (captures the primary display)
-- First run requires a model download (~4 GB)
-- One task execution at a time (GPU is single-threaded)
+Pipelines only trigger runs when the scheduler process is running. Start it from the Pipelines page in the web UI, or run `wintest scheduler` in a terminal. For unattended machines, use `wintest scheduler --install-startup` to have it launch automatically at each login (the machine must stay logged in — UI automation requires an interactive desktop session).
+
+---
+
+## Test file format
+
+```yaml
+name: "Save file and verify output"
+variables:
+  filename: "test_output.txt"
+
+steps:
+  - action: launch_application
+    app_path: "C:\\Program Files\\MyApp\\MyApp.exe"
+    wait_seconds: 2
+
+  - action: click
+    click_x: 0.42
+    click_y: 0.18
+    description: "Click File menu"
+
+  - action: click
+    click_x: 0.45
+    click_y: 0.24
+    description: "Click Save As"
+
+  - action: type
+    text: "{{filename}}"
+
+  - action: hotkey
+    keys: ["enter"]
+
+  - action: compare_saved_file
+    file_path: "C:\\Users\\me\\Documents"
+    baseline_id: expected_output.txt
+    compare_mode: exact
+```
+
+You rarely write YAML by hand — the Test Builder and Test Editor generate it for you.
+
+---
+
+## Architecture
+
+- **Python / FastAPI** backend with WebSocket support for live run progress
+- **React + TypeScript + Vite** frontend served from the same process
+- Workspace-based storage: tests, suites, pipelines, baselines, and reports all live under a directory the user chooses
+- Scheduler runs as a separate background process using the same test-runner code as the CLI and web UI
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
+
+---
+
+## Known limitations
+
+- Single-monitor testing only (captures the primary display)
+- One test can run at a time — UI automation requires exclusive desktop access
+- Scheduler runs as a startup program, not a Windows Service, because UI tests need an interactive desktop session
+- Windows only
