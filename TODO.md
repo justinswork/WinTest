@@ -85,6 +85,29 @@ Each test can specify its own `timeout_seconds` in the YAML (and as a field in t
 
 When the timeout hits, mark the test as failed with a "Test exceeded timeout of Xm" error and proceed to the next test in the suite.
 
+## Failure Reason Codes — Impact: 8 | Difficulty: 5
+Every failed test should report a structured failure *reason* alongside the free-text error message, so users can quickly see why a test failed without opening the full report — and so failures can be grouped and analyzed on the Trends page.
+
+Formalize a category of "validation" steps (currently: `verify`, `verify_screenshot`, `compare_saved_file`; eventually fluent assertions, runtime variable checks, etc.) as distinct from action steps. Validation steps are the ones that *intentionally* produce a pass/fail signal; action steps only fail when something unexpected breaks. Each failure type maps to a reason code.
+
+Proposed codes:
+- `timeout` — test exceeded its timeout
+- `file_mismatch` — `compare_saved_file` found a diff
+- `screenshot_mismatch` — `verify_screenshot` region didn't match baseline
+- `element_not_found` — AI-based click/verify couldn't locate the target
+- `assertion_failed` — generic fluent-assertion failure
+- `app_launch_failed` — `launch_application` couldn't start the app
+- `step_error` — unexpected runtime error (catch-all for bugs / infra issues)
+- `cancelled` — user cancelled the run
+
+Surface the code in:
+- The report JSON as a top-level `failure_reason` field (set to the failing step's reason)
+- The report viewer as a colored badge next to the pass/fail status
+- The Results list as a small badge on each failed run
+- The Trends detail view, so users can spot patterns like "3 timeouts this week, all on CRM tests"
+
+Each step type declares its own set of possible reason codes so the runner can attach the right one automatically.
+
 ## User-Defined Custom Steps — Impact: 6 | Difficulty: 6
 Allow users to define their own custom step types (composite steps or macros) that combine multiple built-in steps into a reusable action. This would reduce repetition across tests. Needs a macro definition format and execution model.
 
