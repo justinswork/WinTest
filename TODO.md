@@ -104,3 +104,10 @@ Tests are already plain YAML files that can be copied between machines. This ite
 
 ## Keyboard Shortcuts — Impact: 3 | Difficulty: 3
 Global hotkeys to start/stop runs without switching to the browser.
+
+---
+
+# Research & Competitive Analysis
+
+## Look into TestComplete and Ranorex
+These are established commercial tools in the Windows desktop UI testing space. Investigate what they do well, how they position themselves, and where wintest differs. Things to look at: how they handle element identification (object recognition vs coordinates vs image), their recording workflow, how they schedule/orchestrate runs, what their assertion model looks like, and their pricing/licensing models.
