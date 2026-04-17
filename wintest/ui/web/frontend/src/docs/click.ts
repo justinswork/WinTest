@@ -3,18 +3,32 @@ import type { StepDoc } from './types';
 export const clickDoc: StepDoc = {
   name: 'click',
   title: 'Click',
-  summary: 'Click on a UI element identified by the AI model.',
+  summary: 'Left-click at captured coordinates, or on a UI element identified by AI.',
   description:
-    'Takes a screenshot of the current screen, sends it to the AI vision model along with the target description, and performs a single left-click at the coordinates the model identifies. The target should be a natural language description of the element you want to click.',
+    'Performs a single left-click. There are two modes: coordinate-based (the default, set up by the Test Builder) uses pixel-exact coordinates recorded when you clicked on the screenshot; AI-based uses a vision model to locate an element described in plain language. Coordinate mode is faster and deterministic; AI mode is useful when a layout may shift between runs.',
   parameters: [
+    {
+      name: 'click_x',
+      type: 'number',
+      required: false,
+      description:
+        'Normalized horizontal click coordinate (0.0–1.0). Used together with click_y for coordinate-based clicking. Typically recorded by the Test Builder.',
+    },
+    {
+      name: 'click_y',
+      type: 'number',
+      required: false,
+      description:
+        'Normalized vertical click coordinate (0.0–1.0). Used together with click_x for coordinate-based clicking.',
+    },
     {
       name: 'target',
       type: 'string',
-      required: true,
+      required: false,
       description:
-        'Natural language description of the UI element to click (e.g. "File menu", "Save button", "the OK button in the dialog").',
+        'Natural language description of the UI element to click (AI mode). Only used if click_x and click_y are not set. Example: "Save button", "File menu".',
     },
   ],
   example:
-    '- type: click\n  target: "File menu"\n  description: "Open the File menu"',
+    '- action: click\n  click_x: 0.42\n  click_y: 0.18\n  description: "Click File menu"',
 };

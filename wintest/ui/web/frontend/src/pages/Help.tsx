@@ -91,37 +91,59 @@ export function Help() {
       <section className="help-section">
         <h3>{t('help.overview')}</h3>
         <p>
-          wintest is an AI-powered Windows UI testing tool. It automates desktop applications
-          by taking screenshots, sending them to an AI vision model, and executing steps based
-          on what the model sees on screen.
+          wintest is an automated UI testing tool for Windows desktop applications.
+          It drives any GUI — office suites, engineering tools, in-house apps — without
+          needing source access, accessibility APIs, or DOM selectors.
         </p>
         <p>
-          Tests are defined as YAML test files containing a list of steps. Each step specifies an
-          action to perform (click, type, verify, etc.) along with parameters like a target element
-          description or text to type. When a test runs, wintest processes each step in order:
+          The typical workflow is record-and-replay:
         </p>
         <ol>
-          <li>Captures a screenshot of the current screen</li>
-          <li>Sends the screenshot and step target to the AI vision model</li>
-          <li>The model identifies the target element and returns coordinates</li>
-          <li>wintest performs the action (click, type, etc.) at those coordinates</li>
-          <li>Results are recorded with pass/fail status, timing, and screenshots</li>
+          <li>
+            Open the <strong>Test Builder</strong>, launch your application, and click
+            through it. Each click is captured as a test step with pixel-exact coordinates.
+          </li>
+          <li>
+            Add assertions alongside the clicks — compare files your app produces to
+            saved baselines, or compare a region of the screen to a reference screenshot.
+          </li>
+          <li>
+            Run the test. wintest replays your clicks, types the recorded text, and
+            checks the assertions. Failures show exactly what went wrong, including file
+            and screenshot diffs.
+          </li>
+          <li>
+            Group related tests into <strong>test suites</strong>, and create{' '}
+            <strong>pipelines</strong> to run a test or suite automatically on selected
+            days and times.
+          </li>
         </ol>
         <p>
-          Tests support <strong>variables</strong> that can be defined in
-          the <code>variables:</code> section of the YAML or set at runtime with
-          the <code>set_variable</code> step. Reference them in any string field
-          with <code>{"{{variable_name}}"}</code> syntax.
+          Tests are stored as plain YAML files in the workspace. You rarely write the
+          YAML by hand — the Test Builder and Test Editor generate it for you — but
+          it's human-readable if you want to tweak a step directly.
         </p>
         <p>
-          The <strong>loop</strong> step lets you repeat a range of steps multiple
-          times (do/while style), and tests can be <strong>tagged</strong> for
-          filtering on the test list page.
+          Tests support <strong>variables</strong> (defined in the{' '}
+          <code>variables:</code> block or set at runtime with <code>set_variable</code>)
+          referenced in any string field via <code>{"{{variable_name}}"}</code> syntax.
+          The <strong>loop</strong> step repeats a range of steps do/while style, and{' '}
+          <strong>tags</strong> let you filter the test list.
         </p>
         <p>
-          Tests can be created and managed through this web UI or by editing YAML files directly
-          in the <code>tests/</code> directory. Group tests into <strong>test suites</strong> to
-          run multiple tests in sequence.
+          Most clicks are recorded by coordinate — fast, deterministic, and the
+          recommended default. Click/verify steps can <em>optionally</em> use an AI
+          vision model to locate an element by description instead, which is handy when a
+          UI layout may shift between runs. The AI model is only loaded for tests that
+          actually need it.
+        </p>
+        <p>
+          Scheduled pipelines are triggered by a separate <strong>scheduler</strong>{' '}
+          process that runs in the background. Start it from the Pipelines page, run{' '}
+          <code>wintest scheduler</code> in a terminal, or use{' '}
+          <code>wintest scheduler --install-startup</code> to launch it automatically
+          at Windows login. UI automation requires an interactive desktop session, so
+          the machine must stay logged in.
         </p>
       </section>
 

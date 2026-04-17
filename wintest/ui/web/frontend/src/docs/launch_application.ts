@@ -30,5 +30,5 @@ export const launchApplicationDoc: StepDoc = {
     },
   ],
   example:
-    '- type: launch_application\n  app_path: "notepad.exe"\n  app_title: "Notepad"\n  wait_seconds: 3\n  description: "Launch Notepad"',
+    '- action: launch_application\n  app_path: "notepad.exe"\n  app_title: "Notepad"\n  wait_seconds: 3\n  description: "Launch Notepad"',
 };

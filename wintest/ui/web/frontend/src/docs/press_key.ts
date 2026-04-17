@@ -16,5 +16,5 @@ export const pressKeyDoc: StepDoc = {
     },
   ],
   example:
-    '- type: press_key\n  key: "enter"\n  description: "Press Enter to confirm"',
+    '- action: press_key\n  key: "enter"\n  description: "Press Enter to confirm"',
 };

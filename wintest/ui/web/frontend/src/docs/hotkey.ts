@@ -16,5 +16,5 @@ export const hotkeyDoc: StepDoc = {
     },
   ],
   example:
-    '- type: hotkey\n  keys: ["ctrl", "s"]\n  description: "Save the file"',
+    '- action: hotkey\n  keys: ["ctrl", "s"]\n  description: "Save the file"',
 };

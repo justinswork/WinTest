@@ -8,6 +8,8 @@ import { hotkeyDoc } from './hotkey';
 import { scrollDoc } from './scroll';
 import { waitDoc } from './wait';
 import { verifyDoc } from './verify';
+import { verifyScreenshotDoc } from './verify_screenshot';
+import { compareSavedFileDoc } from './compare_saved_file';
 import { launchApplicationDoc } from './launch_application';
 import { setVariableDoc } from './set_variable';
 import { loopDoc } from './loop';
@@ -25,6 +27,8 @@ const allDocs: StepDoc[] = [
   scrollDoc,
   waitDoc,
   verifyDoc,
+  verifyScreenshotDoc,
+  compareSavedFileDoc,
   setVariableDoc,
   loopDoc,
 ];

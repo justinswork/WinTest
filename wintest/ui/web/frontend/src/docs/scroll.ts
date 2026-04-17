@@ -16,5 +16,5 @@ export const scrollDoc: StepDoc = {
     },
   ],
   example:
-    '- type: scroll\n  scroll_amount: -3\n  description: "Scroll down three clicks"',
+    '- action: scroll\n  scroll_amount: -3\n  description: "Scroll down three clicks"',
 };
