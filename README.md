@@ -1,4 +1,4 @@
-[![Tests](https://github.com/justinswork/WinTest/actions/workflows/tests.yml/badge.svg)](https://github.com/justinswork/WinTest/actions/workflows/tests.yml)
+[![Tests](https://github.com/justinswork/wintest/actions/workflows/tests.yml/badge.svg)](https://github.com/justinswork/wintest/actions/workflows/tests.yml)
 
 # wintest
 
