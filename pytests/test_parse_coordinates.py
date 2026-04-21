@@ -2,7 +2,11 @@
 
 import pytest
 
-from wintest.core.vision.showui import ShowUIModel
+# Skip this whole file if AI deps aren't installed — `transformers` lives in the
+# optional `[ai]` extras, and the showui module imports it at load time.
+pytest.importorskip("transformers")
+
+from wintest.core.vision.showui import ShowUIModel  # noqa: E402
 
 
 class TestParseCoordinates:
