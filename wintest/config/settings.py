@@ -56,6 +56,7 @@ class AppSettings:
     wait_after_launch: float = 3.0
     focus_delay: float = 0.3
     graceful_close_timeout: float = 5.0
+    launch_timeout: float = 30.0
 
 
 @dataclass

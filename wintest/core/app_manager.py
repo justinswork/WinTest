@@ -35,6 +35,25 @@ def _get_window_process_id(user32, hwnd) -> int:
     return pid.value
 
 
+_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+_STILL_ACTIVE = 259
+
+
+def _is_pid_alive(pid: int) -> bool:
+    """Return True if the given Windows PID refers to a running process."""
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.OpenProcess(_PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if not handle:
+        return False
+    try:
+        exit_code = ctypes.wintypes.DWORD()
+        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+            return False
+        return exit_code.value == _STILL_ACTIVE
+    finally:
+        kernel32.CloseHandle(handle)
+
+
 class ApplicationManager:
     """
     Manages the lifecycle of a desktop application under test.
@@ -52,20 +71,37 @@ class ApplicationManager:
         config: AppConfig,
         graceful_close_timeout: float = 5.0,
         focus_delay: float = 0.3,
+        launch_timeout: float = 30.0,
     ):
         self.config = config
         self.graceful_close_timeout = graceful_close_timeout
         self.focus_delay = focus_delay
+        self.launch_timeout = launch_timeout
         self._process: Optional[subprocess.Popen] = None
+        self._gui_pid: Optional[int] = None
         self._user32 = ctypes.windll.user32
 
     @property
     def _pid(self) -> Optional[int]:
-        """The PID of the launched process, if available."""
+        """The PID of the GUI app under test, if known.
+
+        Once launch verification finds a matching window we capture the GUI
+        process's PID. Before then (or if no app_title is configured) we fall
+        back to the spawned subprocess pid — which under shell=True is the
+        cmd wrapper, not the GUI.
+        """
+        if self._gui_pid is not None:
+            return self._gui_pid
         return self._process.pid if self._process else None
 
     def launch(self, kill_existing: bool = True) -> None:
-        """Launch the application. Optionally kill existing instances first."""
+        """Launch the application and verify it actually started.
+
+        Raises:
+            RuntimeError: the cmd wrapper exited with an error (e.g. path not
+                found), or the configured app_title window did not appear
+                within launch_timeout.
+        """
         if kill_existing and self.config.title and self.find_window_handle():
             logger.info("Closing existing '%s' windows...", self.config.title)
             self._close_matching_windows()
@@ -79,6 +115,46 @@ class ApplicationManager:
             self._process.pid,
         )
         time.sleep(self.config.wait_after_launch)
+
+        self._verify_launched()
+
+    def _verify_launched(self) -> None:
+        """Confirm the launched app's process and (optionally) window are alive.
+
+        With shell=True the subprocess pid is the cmd.exe wrapper, which exits
+        as soon as it has finished spawning the GUI app. A non-zero returncode
+        means cmd hit an error (e.g. path not found). Returncode 0 means cmd
+        dispatched something successfully — but cmd exits 0 for `start "" badpath`-style
+        invocations too, so we additionally poll for a window matching app_title
+        when one is configured.
+        """
+        if self._process is not None:
+            rc = self._process.poll()
+            if rc is not None and rc != 0:
+                raise RuntimeError(
+                    f"Failed to launch '{self.config.path}': "
+                    f"shell exited with code {rc}"
+                )
+
+        if not self.config.title:
+            return
+
+        deadline = time.time() + self.launch_timeout
+        while time.time() < deadline:
+            hwnd = self._find_window_by_title_any_process()
+            if hwnd is not None:
+                self._gui_pid = _get_window_process_id(self._user32, hwnd)
+                logger.info(
+                    "Application window '%s' found (PID %d).",
+                    self.config.title, self._gui_pid,
+                )
+                return
+            time.sleep(0.5)
+
+        raise RuntimeError(
+            f"Application window matching '{self.config.title}' did not appear "
+            f"within {self.launch_timeout:.0f}s of launching '{self.config.path}'"
+        )
 
     def focus(self) -> bool:
         """Bring the application window to the foreground and maximize it."""
@@ -100,6 +176,8 @@ class ApplicationManager:
 
     def is_running(self) -> bool:
         """Check if the application process is still running."""
+        if self._gui_pid is not None:
+            return _is_pid_alive(self._gui_pid)
         if self._process is not None:
             return self._process.poll() is None
         if self.config.title:
@@ -129,19 +207,25 @@ class ApplicationManager:
         self.force_close()
 
     def force_close(self) -> None:
-        """Force-kill the launched process by PID, or fall back to process name.
+        """Force-kill the launched GUI process by PID, or fall back to process name.
 
-        When a PID is available (the normal case), only that specific process
-        is killed. The process-name fallback only runs before launch when
-        cleaning up pre-existing windows.
+        Prefers the GUI PID captured at launch verification. If we never
+        identified the GUI (no app_title configured, or verification skipped),
+        falls back to the spawned subprocess pid — which under shell=True is
+        the cmd wrapper and has likely already exited. Last resort is killing
+        by process name.
         """
-        if self._process is not None:
-            pid = self._process.pid
+        pid = self._gui_pid
+        if pid is not None:
             logger.info("Force-closing PID %d (%s)", pid, self.config.process_name)
             os.system(f"taskkill /PID {pid} /T /F >nul 2>&1")
-        else:
-            logger.info("Force-closing by name: %s", self.config.process_name)
-            os.system(f"taskkill /IM {self.config.process_name} /F >nul 2>&1")
+            return
+        if self._process is not None:
+            logger.info("Force-closing PID %d (%s)", self._process.pid, self.config.process_name)
+            os.system(f"taskkill /PID {self._process.pid} /T /F >nul 2>&1")
+            return
+        logger.info("Force-closing by name: %s", self.config.process_name)
+        os.system(f"taskkill /IM {self.config.process_name} /F >nul 2>&1")
 
     def find_window_handle(self) -> Optional[int]:
         """Find the HWND of the first visible window matching the title.
@@ -150,12 +234,22 @@ class ApplicationManager:
         that process are considered. This prevents matching unrelated windows
         (e.g. an editor with 'notepad' in the tab title).
         """
+        return self._enum_windows_for_title(filter_pid=self._pid)
+
+    def _find_window_by_title_any_process(self) -> Optional[int]:
+        """Find a window matching the title without filtering by process.
+
+        Used during launch verification: with shell=True, self._pid is the
+        cmd.exe wrapper, not the GUI app, so the PID filter would never match.
+        """
+        return self._enum_windows_for_title(filter_pid=None)
+
+    def _enum_windows_for_title(self, filter_pid: Optional[int]) -> Optional[int]:
         if not self.config.title:
             return None
 
         result = [None]
         title_lower = self.config.title.lower()
-        target_pid = self._pid
 
         @ctypes.WINFUNCTYPE(
             ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM
@@ -163,10 +257,9 @@ class ApplicationManager:
         def callback(hwnd, _lparam):
             if not self._user32.IsWindowVisible(hwnd):
                 return True
-            # If we have a PID, only consider windows from that process
-            if target_pid is not None:
+            if filter_pid is not None:
                 window_pid = _get_window_process_id(self._user32, hwnd)
-                if window_pid != target_pid:
+                if window_pid != filter_pid:
                     return True
             length = self._user32.GetWindowTextLengthW(hwnd)
             if length > 0:

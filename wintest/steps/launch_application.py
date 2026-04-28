@@ -28,8 +28,12 @@ def execute(step, runner_ctx):
         config=app_config,
         graceful_close_timeout=effective.app.graceful_close_timeout,
         focus_delay=effective.app.focus_delay,
+        launch_timeout=effective.app.launch_timeout,
     )
-    app_manager.launch()
+    try:
+        app_manager.launch()
+    except (FileNotFoundError, RuntimeError) as e:
+        return StepResult(step=step, passed=False, error=str(e))
 
     # Store on runner context so runner can focus/close it
     runner_ctx["app_manager"] = app_manager
