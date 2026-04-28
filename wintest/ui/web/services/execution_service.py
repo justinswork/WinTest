@@ -7,7 +7,7 @@ import os
 import uuid
 from datetime import datetime
 
-from ....core.vision import VisionModel
+from ....core.vision import VisionModel, step_needs_vision
 from ....core.screen import ScreenCapture
 from ....core.actions import ActionExecutor
 from ....core.agent import Agent
@@ -158,7 +158,7 @@ def _run_test(test_file: str, run_id: str, app_state: AppState, loop: asyncio.Ab
 
         # Only load the AI model if a step actually needs it
         vision = None
-        if any(_needs_vision(s) for s in test.steps):
+        if any(step_needs_vision(s) for s in test.steps):
             if app_state.vision_model is None:
                 app_state.model_status = "loading"
                 app_state.broadcast_sync({"type": "model_loading", "message": "Loading AI model..."})
@@ -311,7 +311,7 @@ def _run_test_suite(suite_file: str, run_id: str, app_state: AppState, loop: asy
             full_path = str(workspace.tests_dir() / test_path)
             try:
                 t = load_test(full_path, settings=app_state.settings)
-                if any(_needs_vision(s) for s in t.steps):
+                if any(step_needs_vision(s) for s in t.steps):
                     needs_model = True
                     break
             except Exception:
@@ -447,16 +447,6 @@ def start_builder(app_state: AppState) -> BuilderState:
     return BuilderState(app_state)
 
 
-def _needs_vision(step: Step) -> bool:
-    """Check if a step requires the AI vision model."""
-    if step.action in ("click", "double_click", "right_click", "verify"):
-        # Coordinate-based clicks don't need vision
-        if step.click_x is not None and step.click_y is not None:
-            return False
-        return True
-    return False
-
-
 def execute_builder_step(step: Step, builder: BuilderState) -> dict:
     """Execute a single step in the builder and return the result with screenshot."""
     defn = registry.get(step.action)
@@ -468,7 +458,7 @@ def execute_builder_step(step: Step, builder: BuilderState) -> dict:
         }
 
     # Only load the AI model if this step actually needs it
-    if _needs_vision(step):
+    if step_needs_vision(step):
         agent = builder.ensure_agent()
     else:
         agent = builder.agent  # may be None, but non-vision steps won't use it

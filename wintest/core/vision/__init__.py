@@ -6,6 +6,21 @@ from .base import BaseVisionModel
 
 logger = logging.getLogger(__name__)
 
+
+def step_needs_vision(step) -> bool:
+    """Return True if the step requires the AI vision model to execute."""
+    if step.action in ("click", "double_click", "right_click", "verify"):
+        # Coordinate-based clicks/verifies don't need vision
+        if step.click_x is not None and step.click_y is not None:
+            return False
+        return True
+    return False
+
+
+def test_needs_vision(test) -> bool:
+    """Return True if any step in the test requires the AI vision model."""
+    return any(step_needs_vision(s) for s in test.steps)
+
 # Map known model paths/names to their implementation
 _MODEL_REGISTRY = {
     "showlab/ShowUI-2B": "showui",

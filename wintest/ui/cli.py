@@ -71,7 +71,7 @@ def run(ctx, test_file, no_report):
     """Execute a test from a YAML file."""
     settings = ctx.obj["settings"]
 
-    from ..core.vision import VisionModel
+    from ..core.vision import VisionModel, test_needs_vision
     from ..core.screen import ScreenCapture
     from ..core.actions import ActionExecutor
     from ..core.agent import Agent
@@ -87,10 +87,12 @@ def run(ctx, test_file, no_report):
         console.error(str(e))
         sys.exit(2)
 
-    console.info("Loading AI model...")
-    vision = VisionModel(model_settings=settings.model)
-    vision.load()
-    console.success("Model loaded.")
+    vision = None
+    if test_needs_vision(test):
+        console.info("Loading AI model...")
+        vision = VisionModel(model_settings=settings.model)
+        vision.load()
+        console.success("Model loaded.")
 
     screen = ScreenCapture(coordinate_scale=settings.action.coordinate_scale)
     actions = ActionExecutor(action_settings=settings.action)
@@ -122,10 +124,11 @@ def run_test_suite(ctx, suite_file, no_report):
     """Execute a test suite from a YAML file."""
     settings = ctx.obj["settings"]
 
-    from ..core.vision import VisionModel
+    from ..core.vision import VisionModel, test_needs_vision
     from ..core.screen import ScreenCapture
     from ..core.actions import ActionExecutor
     from ..core.agent import Agent
+    from ..tasks.loader import load_test
     from ..tasks.test_suite_loader import load_test_suite
     from ..tasks.test_suite_runner import TestSuiteRunner
     from ..tasks.runner import TestRunner
@@ -138,10 +141,23 @@ def run_test_suite(ctx, suite_file, no_report):
         console.error(str(e))
         sys.exit(2)
 
-    console.info("Loading AI model...")
-    vision = VisionModel(model_settings=settings.model)
-    vision.load()
-    console.success("Model loaded.")
+    needs_vision = False
+    for test_path in suite.test_paths:
+        full_path = str(workspace.tests_dir() / test_path)
+        try:
+            t = load_test(full_path, settings=settings)
+        except Exception:
+            continue
+        if test_needs_vision(t):
+            needs_vision = True
+            break
+
+    vision = None
+    if needs_vision:
+        console.info("Loading AI model...")
+        vision = VisionModel(model_settings=settings.model)
+        vision.load()
+        console.success("Model loaded.")
 
     screen = ScreenCapture(coordinate_scale=settings.action.coordinate_scale)
     actions = ActionExecutor(action_settings=settings.action)

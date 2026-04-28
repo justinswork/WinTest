@@ -21,6 +21,7 @@ from ..tasks.test_suite_runner import TestSuiteRunner
 from ..core.screen import ScreenCapture
 from ..core.actions import ActionExecutor
 from ..core.agent import Agent
+from ..core.vision import step_needs_vision, test_needs_vision
 from . import pidfile
 
 logger = logging.getLogger(__name__)
@@ -28,21 +29,12 @@ logger = logging.getLogger(__name__)
 CHECK_INTERVAL_SECONDS = 30
 
 
-def _step_needs_vision(step) -> bool:
-    """Mirror of execution_service._needs_vision for scheduler use."""
-    if step.action in ("click", "double_click", "right_click", "verify"):
-        if step.click_x is not None and step.click_y is not None:
-            return False
-        return True
-    return False
-
-
-def _test_needs_vision(test_path: Path, settings: Settings) -> bool:
+def _test_path_needs_vision(test_path: Path, settings: Settings) -> bool:
     try:
         test = load_test(str(test_path), settings=settings)
     except Exception:
         return False
-    return any(_step_needs_vision(s) for s in test.steps)
+    return test_needs_vision(test)
 
 
 class SchedulerEngine:
@@ -166,7 +158,7 @@ class SchedulerEngine:
             suite = load_test_suite(str(suite_path))
             needs = False
             for tp in suite.test_paths:
-                if _test_needs_vision(workspace.tests_dir() / tp, self.settings):
+                if _test_path_needs_vision(workspace.tests_dir() / tp, self.settings):
                     needs = True
                     break
             vision = self._ensure_vision() if needs else None
@@ -179,7 +171,7 @@ class SchedulerEngine:
         # test
         test_path = workspace.tests_dir() / pipeline.target_file
         test = load_test(str(test_path), settings=self.settings)
-        needs = any(_step_needs_vision(s) for s in test.steps)
+        needs = test_needs_vision(test)
         vision = self._ensure_vision() if needs else None
         agent = Agent(vision, screen, actions)
         runner = TestRunner(agent, settings=self.settings)
