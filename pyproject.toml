@@ -76,3 +76,4 @@ exclude = ["wintest.ui.web.frontend*"]
 
 [tool.setuptools.package-data]
 "wintest.ui.web" = ["frontend/dist/**/*"]
+"wintest.reporting" = ["templates/*.html"]
