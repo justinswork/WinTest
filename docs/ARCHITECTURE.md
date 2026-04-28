@@ -87,7 +87,7 @@ Steps are the atomic units of a test. Each step type is a self-contained Python 
 | Step | Category | Purpose |
 |------|----------|---------|
 | `launch_application` | Runner | Launches an app, installs recovery strategy, manages window focus |
-| `click` / `double_click` / `right_click` | Action | Clicks at captured coordinates (`click_x`/`click_y`), or optionally uses AI to locate an element by `target` description |
+| `click` | Action | Clicks at captured coordinates (`click_x`/`click_y`), or optionally uses AI to locate an element by `target` description. `click_type` selects left (default) / `double_click` / `right_click` / `middle_click` |
 | `type` | Action | Types text at the current cursor position |
 | `press_key` | Action | Presses a single key (enter, tab, escape, arrows, f-keys...) |
 | `hotkey` | Action | Presses a key combination (e.g. `["ctrl", "s"]`) |

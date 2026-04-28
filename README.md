@@ -48,7 +48,7 @@ Think of it as Selenium/Playwright, but for **any desktop application**.
 - **CLI and web UI** — run tests from either; the web UI is the primary interface
 
 ### Supported step types
-`click`, `double_click`, `right_click`, `type`, `press_key`, `hotkey`, `scroll`, `wait`, `launch_application`, `verify`, `verify_screenshot`, `compare_saved_file`, `set_variable`, `loop`
+`click` (left/double/right/middle via `click_type`), `type`, `press_key`, `hotkey`, `scroll`, `wait`, `launch_application`, `verify`, `verify_screenshot`, `compare_saved_file`, `set_variable`, `loop`
 
 ### Optional: AI-driven element targeting
 

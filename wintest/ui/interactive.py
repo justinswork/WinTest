@@ -13,10 +13,11 @@ from ..tasks.schema import Step
 from . import console
 
 # Command patterns: "click <target>", "type <text>", etc.
+# Click variants share the "click" action and differ only by click_type.
 COMMAND_PATTERNS = [
     (r"^click\s+(.+)$", "click"),
-    (r"^double[- ]?click\s+(.+)$", "double_click"),
-    (r"^right[- ]?click\s+(.+)$", "right_click"),
+    (r"^double[- ]?click\s+(.+)$", "click:double_click"),
+    (r"^right[- ]?click\s+(.+)$", "click:right_click"),
     (r"^type\s+(.+)$", "type"),
     (r"^press\s+(.+)$", "press_key"),
     (r"^hotkey\s+(.+)$", "hotkey"),
@@ -51,7 +52,11 @@ def parse_command(text: str) -> Step | None:
         if not match:
             continue
 
-        if step_type in ("click", "double_click", "right_click", "verify"):
+        if step_type.startswith("click:"):
+            click_type = step_type.split(":", 1)[1]
+            return Step(action="click", target=match.group(1).strip(), click_type=click_type)
+
+        if step_type in ("click", "verify"):
             return Step(action=step_type, target=match.group(1).strip())
 
         if step_type == "type":

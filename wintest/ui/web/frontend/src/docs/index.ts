@@ -1,7 +1,5 @@
 import type { StepDoc } from './types';
 import { clickDoc } from './click';
-import { doubleClickDoc } from './double_click';
-import { rightClickDoc } from './right_click';
 import { typeDoc } from './type';
 import { pressKeyDoc } from './press_key';
 import { hotkeyDoc } from './hotkey';
@@ -19,8 +17,6 @@ export type { StepDoc, StepParam } from './types';
 const allDocs: StepDoc[] = [
   launchApplicationDoc,
   clickDoc,
-  doubleClickDoc,
-  rightClickDoc,
   typeDoc,
   pressKeyDoc,
   hotkeyDoc,

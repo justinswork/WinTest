@@ -514,7 +514,7 @@ def execute_builder_step(step: Step, builder: BuilderState) -> dict:
             if agent is None:
                 agent = Agent(None, builder.screen, builder.actions)
                 agent.report_dir = None
-            result = agent.click_at(step, click_type=step.action if step.action in ("double_click", "right_click") else "click", restore_cursor=True)
+            result = agent.click_at(step, click_type=step.click_type or "click", restore_cursor=True)
         else:
             pre_click_b64 = None
             agent = builder.ensure_agent()

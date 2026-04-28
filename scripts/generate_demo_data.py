@@ -363,7 +363,7 @@ def _duration_for_action(action: str, configured: float = 0.0) -> float:
         return round(random.uniform(2.0, 5.0) + (configured or 0), 2)
     if action == "wait":
         return round((configured or 1.0) + random.uniform(0.0, 0.05), 2)
-    if action in ("click", "double_click", "right_click"):
+    if action == "click":
         return round(random.uniform(0.25, 0.85), 2)
     if action == "type":
         return round(random.uniform(0.2, 1.2), 2)

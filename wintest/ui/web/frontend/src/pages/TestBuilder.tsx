@@ -323,8 +323,6 @@ export function TestBuilder() {
         step.target = target;
         step.click_type = clickType;
         break;
-      case 'double_click':
-      case 'right_click':
       case 'verify':
         step.target = target;
         break;
@@ -966,7 +964,7 @@ export function TestBuilder() {
             disabled={executing}
           />
           {(() => {
-            const interactive = ['click', 'double_click', 'right_click', 'type', 'launch_application'].includes(action);
+            const interactive = ['click', 'type', 'launch_application'].includes(action);
             const primaryAction = interactive ? handleExecute : handleSaveStep;
             const primaryLabel = interactive
               ? (executing ? t('builder.executing') : t('builder.addAndRun'))
@@ -1028,7 +1026,11 @@ export function TestBuilder() {
                   >
                     <span className="step-num">#{i + 1}</span>
                     <span className="step-label">
-                      <strong>{s.step.action}</strong>
+                      <strong>
+                        {s.step.action === 'click' && s.step.click_type && s.step.click_type !== 'click'
+                          ? s.step.click_type
+                          : s.step.action}
+                      </strong>
                       {s.step.target && <> &mdash; {s.step.target}</>}
                       {s.step.text && <> &mdash; "{s.step.text}"</>}
                       {s.step.app_path && <> &mdash; {s.step.app_path}</>}
@@ -1218,7 +1220,12 @@ function StepDetail({ step, index, onChange, onCaptureBaseline }: {
   return (
     <div className="builder-step-detail">
       <div className="builder-detail-header">
-        <strong>#{index + 1} {s.action}</strong>
+        <strong>
+          #{index + 1}{' '}
+          {s.action === 'click' && s.click_type && s.click_type !== 'click'
+            ? s.click_type
+            : s.action}
+        </strong>
         {step.duration_seconds > 0 && (
           <span className="text-muted">{step.duration_seconds.toFixed(1)}s</span>
         )}
@@ -1234,7 +1241,7 @@ function StepDetail({ step, index, onChange, onCaptureBaseline }: {
         />
       </div>
 
-      {(s.action === 'click' || s.action === 'double_click' || s.action === 'right_click' || s.action === 'verify') && (
+      {(s.action === 'click' || s.action === 'verify') && (
         <div className="builder-detail-row">
           <span className="builder-detail-label">{t('builder.detail.target')}</span>
           <input

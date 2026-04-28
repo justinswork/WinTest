@@ -7,8 +7,8 @@ from wintest.tasks.schema import Step, TestDefinition
 from wintest.tasks.validator import validate_test
 
 EXPECTED_ACTIONS = {
-    "click", "compare_saved_file", "double_click", "hotkey",
-    "launch_application", "loop", "press_key", "right_click", "scroll",
+    "click", "compare_saved_file", "hotkey",
+    "launch_application", "loop", "press_key", "scroll",
     "set_variable", "type", "verify", "verify_screenshot", "wait",
 }
 
@@ -57,24 +57,6 @@ class TestClickValidation:
         issues = registry.get("click").validate(Step(action="click"), 1)
         assert len(issues) == 1
         assert "target" in issues[0].lower()
-
-
-class TestDoubleClickValidation:
-    def test_valid(self):
-        assert registry.get("double_click").validate(Step(action="double_click", target="icon"), 1) == []
-
-    def test_missing_target(self):
-        issues = registry.get("double_click").validate(Step(action="double_click"), 1)
-        assert len(issues) == 1
-
-
-class TestRightClickValidation:
-    def test_valid(self):
-        assert registry.get("right_click").validate(Step(action="right_click", target="desktop"), 1) == []
-
-    def test_missing_target(self):
-        issues = registry.get("right_click").validate(Step(action="right_click"), 1)
-        assert len(issues) == 1
 
 
 class TestVerifyValidation:
