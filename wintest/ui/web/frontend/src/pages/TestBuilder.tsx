@@ -947,7 +947,15 @@ export function TestBuilder() {
           <select
             className="input"
             value={action}
-            onChange={e => setAction(e.target.value)}
+            onChange={e => {
+              setAction(e.target.value);
+              // Cancel any in-progress screenshot pick / region drag — they
+              // belong to a different step type than the user just selected.
+              setPickMode(false);
+              setRegionMode(false);
+              setRegionRect(null);
+              regionStartRef.current = null;
+            }}
             style={{ width: 160 }}
             disabled={executing}
           >
