@@ -5,6 +5,7 @@ import { X, HelpCircle, Copy } from 'lucide-react';
 import type { Step, FieldInfo } from '../../api/types';
 import { useTestStore } from '../../stores/testStore';
 import { AppPathInput } from '../common/AppPathInput';
+import { KeyRecorder } from '../common/KeyRecorder';
 import { StepPicker } from './StepPicker';
 
 interface Props {
@@ -40,19 +41,19 @@ const FIELD_RENDERERS: Record<string, FieldRenderer> = {
     />
   ),
   key: (step, _field, update, t) => (
-    <input
-      className="input"
+    <KeyRecorder
+      mode="single"
       placeholder={t('stepForm.keyPlaceholder')}
       value={step.key ?? ''}
-      onChange={e => update('key', e.target.value || null)}
+      onChange={v => update('key', v || null)}
     />
   ),
   keys: (step, _field, update, t) => (
-    <input
-      className="input"
+    <KeyRecorder
+      mode="combo"
       placeholder={t('stepForm.keysPlaceholder')}
       value={step.keys?.join(', ') ?? ''}
-      onChange={e => update('keys', e.target.value.split(',').map(k => k.trim()).filter(Boolean))}
+      onChange={v => update('keys', v.split(',').map(k => k.trim()).filter(Boolean))}
     />
   ),
   scroll_amount: (step, _field, update, t) => (

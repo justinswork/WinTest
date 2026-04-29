@@ -8,6 +8,7 @@ import { VariablesEditor } from '../components/tasks/VariablesEditor';
 import { useTestStore } from '../stores/testStore';
 import { showToast } from '../components/common/Toast';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { KeyRecorder } from '../components/common/KeyRecorder';
 import type { Step } from '../api/types';
 import { newStep } from '../api/types';
 
@@ -708,26 +709,26 @@ export function TestBuilder() {
         );
       case 'press_key':
         return (
-          <input
-            ref={inputRef}
-            className="input flex-1"
-            placeholder={t('builder.keyPlaceholder')}
+          <KeyRecorder
+            inputRef={inputRef}
+            mode="single"
             value={key}
-            onChange={e => setKey(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && key) handleExecute(); }}
+            onChange={setKey}
+            placeholder={t('builder.keyPlaceholder')}
             disabled={executing}
+            onEnter={handleExecute}
           />
         );
       case 'hotkey':
         return (
-          <input
-            ref={inputRef}
-            className="input flex-1"
-            placeholder={t('builder.keysPlaceholder')}
+          <KeyRecorder
+            inputRef={inputRef}
+            mode="combo"
             value={keys}
-            onChange={e => setKeys(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && keys) handleExecute(); }}
+            onChange={setKeys}
+            placeholder={t('builder.keysPlaceholder')}
             disabled={executing}
+            onEnter={handleExecute}
           />
         );
       case 'scroll':
@@ -1292,10 +1293,11 @@ function StepDetail({ step, index, onChange, onCaptureBaseline }: {
       {s.action === 'press_key' && (
         <div className="builder-detail-row">
           <span className="builder-detail-label">{t('builder.detail.key')}</span>
-          <input
+          <KeyRecorder
+            mode="single"
             className="input builder-detail-input"
             value={s.key ?? ''}
-            onChange={e => updateField('key', e.target.value || null)}
+            onChange={v => updateField('key', v || null)}
           />
         </div>
       )}
@@ -1303,10 +1305,11 @@ function StepDetail({ step, index, onChange, onCaptureBaseline }: {
       {s.action === 'hotkey' && (
         <div className="builder-detail-row">
           <span className="builder-detail-label">{t('builder.detail.keys')}</span>
-          <input
+          <KeyRecorder
+            mode="combo"
             className="input builder-detail-input"
             value={s.keys?.join(', ') ?? ''}
-            onChange={e => updateField('keys', e.target.value.split(',').map(k => k.trim()).filter(Boolean))}
+            onChange={v => updateField('keys', v.split(',').map(k => k.trim()).filter(Boolean))}
           />
         </div>
       )}
