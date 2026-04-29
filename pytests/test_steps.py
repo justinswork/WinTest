@@ -14,7 +14,7 @@ EXPECTED_ACTIONS = {
 
 RUNNER_STEPS = {
     "launch_application", "loop", "set_variable", "verify_screenshot",
-    "compare_saved_file",
+    "compare_saved_file", "wait",
 }
 
 

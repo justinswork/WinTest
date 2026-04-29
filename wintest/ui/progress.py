@@ -1,6 +1,6 @@
 """Progress display callback for test execution."""
 
-from ..tasks.schema import StepResult
+from ..tasks.schema import Step, StepResult
 from . import console
 
 
@@ -10,8 +10,9 @@ class ProgressDisplay:
     def __init__(self, total_steps: int):
         self.total_steps = total_steps
 
-    def on_step_start(self, step_num: int, label: str) -> None:
+    def on_step_start(self, step_num: int, step: Step) -> None:
         """Called before a step begins execution."""
+        label = step.description or step.action
         console.info(f"\n  [{step_num}/{self.total_steps}] {label}...")
 
     def on_step_complete(self, step_num: int, result: StepResult) -> None:

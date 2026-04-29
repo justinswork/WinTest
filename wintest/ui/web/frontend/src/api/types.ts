@@ -123,6 +123,8 @@ export interface StepResultData {
   coordinates: number[] | null;
   screenshot_base64?: string | null;
   screenshot_url?: string | null;
+  actual_screenshot_base64?: string | null;
+  baseline_screenshot_base64?: string | null;
 }
 
 export interface WsMessage {
@@ -137,6 +139,9 @@ export interface WsMessage {
   error?: string;
   coordinates?: number[] | null;
   action?: string;
+  wait_seconds?: number;
+  actual_screenshot_base64?: string | null;
+  baseline_screenshot_base64?: string | null;
   screenshot_base64?: string | null;
   summary?: { total: number; passed: number; failed: number };
   message?: string;

@@ -18,6 +18,9 @@ interface ExecutionState {
   currentStep: number;
   totalSteps: number;
   currentLabel: string | null;
+  currentAction: string | null;
+  currentWaitSeconds: number | null;
+  currentStepStartedAt: number | null;
   watchingDirectory: string | null;
   stepResults: StepResultData[];
   logEntries: LogEntry[];
@@ -42,6 +45,9 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
   currentStep: 0,
   totalSteps: 0,
   currentLabel: null,
+  currentAction: null,
+  currentWaitSeconds: null,
+  currentStepStartedAt: null,
   watchingDirectory: null,
   stepResults: [],
   logEntries: [],
@@ -84,6 +90,9 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
         set({
           currentStep: msg.step_num ?? 0,
           currentLabel: msg.label ?? null,
+          currentAction: msg.action ?? null,
+          currentWaitSeconds: msg.wait_seconds ?? null,
+          currentStepStartedAt: Date.now(),
         });
         break;
       case 'step_completed': {
@@ -102,6 +111,8 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
               error: msg.error ?? null,
               coordinates: msg.coordinates ?? null,
               screenshot_base64: msg.screenshot_base64 ?? null,
+              actual_screenshot_base64: msg.actual_screenshot_base64 ?? null,
+              baseline_screenshot_base64: msg.baseline_screenshot_base64 ?? null,
             }],
           };
         });
@@ -226,6 +237,9 @@ export const useExecutionStore = create<ExecutionState>((set) => ({
     currentStep: 0,
     totalSteps: 0,
     currentLabel: null,
+    currentAction: null,
+    currentWaitSeconds: null,
+    currentStepStartedAt: null,
     stepResults: [],
     logEntries: [],
     error: null,

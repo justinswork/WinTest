@@ -1,4 +1,3 @@
-import time
 import pyautogui
 
 
@@ -37,10 +36,3 @@ class ActionExecutor:
     def scroll(self, clicks: int, x: int = None, y: int = None):
         """Scroll the mouse wheel. Positive = up, negative = down."""
         pyautogui.scroll(clicks, x, y)
-
-    def wait(self, seconds: float):
-        """Wait for a duration, checking for interruption every 0.5s."""
-        deadline = time.time() + seconds
-        while time.time() < deadline:
-            remaining = deadline - time.time()
-            time.sleep(min(0.5, remaining))

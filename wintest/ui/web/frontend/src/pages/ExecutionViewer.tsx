@@ -8,6 +8,7 @@ import { useTestStore } from '../stores/testStore';
 import { useTestSuiteStore } from '../stores/testSuiteStore';
 import { useExecutionWebSocket } from '../api/ws';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { ScreenshotCompare } from '../components/common/ScreenshotCompare';
 
 const STATUS_KEYS: Record<string, string> = {
   idle: 'execution.idle',
@@ -45,9 +46,13 @@ export function ExecutionViewer() {
     ? (hasFailed ? 'progress-failed' : 'progress-passed')
     : (hasFailed ? 'progress-warning' : '');
 
-  const latestScreenshot = store.stepResults.length > 0
-    ? store.stepResults[store.stepResults.length - 1]?.screenshot_base64
+  const latestResult = store.stepResults.length > 0
+    ? store.stepResults[store.stepResults.length - 1]
     : null;
+  const latestScreenshot = latestResult?.screenshot_base64 ?? null;
+  const latestActual = latestResult?.actual_screenshot_base64 ?? null;
+  const latestBaseline = latestResult?.baseline_screenshot_base64 ?? null;
+  const showCompare = Boolean(latestActual && latestBaseline);
 
   const handleRunAgain = () => {
     if (!store.sourceFile) return;
@@ -123,9 +128,11 @@ export function ExecutionViewer() {
 
           {store.currentLabel && store.status === 'running' && store.currentStep > store.stepResults.length && (
             <div className="step-card step-running">
-              <span className="step-num">#{store.currentStep}</span>
-              <span className="step-label">{store.currentLabel}</span>
-              <span className="step-status">{t('execution.stepRunning')}</span>
+              <div className="step-card-header">
+                <span className="step-num">#{store.currentStep}</span>
+                <span className="step-label">{store.currentLabel}</span>
+                <RunningStepStatus />
+              </div>
             </div>
           )}
 
@@ -149,7 +156,19 @@ export function ExecutionViewer() {
         </div>
 
         <div className="screenshot-panel">
-          {latestScreenshot ? (
+          {showCompare && latestActual && latestBaseline ? (
+            <ScreenshotCompare
+              actualUrl={`data:image/png;base64,${latestActual}`}
+              baselineUrl={`data:image/png;base64,${latestBaseline}`}
+              overlayUrl={
+                latestScreenshot && latestScreenshot !== latestActual
+                  ? `data:image/png;base64,${latestScreenshot}`
+                  : null
+              }
+              alt={t('execution.screenshotAlt')}
+              initialMode={latestResult?.passed ? 'side-by-side' : 'overlay'}
+            />
+          ) : latestScreenshot ? (
             <img
               src={`data:image/png;base64,${latestScreenshot}`}
               alt={t('execution.screenshotAlt')}
@@ -166,6 +185,34 @@ export function ExecutionViewer() {
       <ConsolePanel />
     </div>
   );
+}
+
+function RunningStepStatus() {
+  const { t } = useTranslation();
+  const action = useExecutionStore(s => s.currentAction);
+  const waitSeconds = useExecutionStore(s => s.currentWaitSeconds);
+  const startedAt = useExecutionStore(s => s.currentStepStartedAt);
+  const [now, setNow] = useState(() => Date.now());
+
+  const isWait = action === 'wait' && waitSeconds && waitSeconds > 0 && startedAt;
+
+  useEffect(() => {
+    if (!isWait) return;
+    const id = window.setInterval(() => setNow(Date.now()), 100);
+    return () => window.clearInterval(id);
+  }, [isWait]);
+
+  if (isWait) {
+    const elapsed = (now - startedAt) / 1000;
+    const remaining = Math.max(0, waitSeconds - elapsed);
+    return (
+      <span className="step-status">
+        {t('execution.waitCountdown', { remaining: remaining.toFixed(1) })}
+      </span>
+    );
+  }
+
+  return <span className="step-status">{t('execution.stepRunning')}</span>;
 }
 
 function RunPicker() {

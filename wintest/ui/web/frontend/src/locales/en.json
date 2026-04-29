@@ -119,6 +119,7 @@
   "execution.createTest": "Create a Test",
   "execution.viewAll": "View all ({{count}} total)",
   "execution.stepRunning": "Running...",
+  "execution.waitCountdown": "Waiting {{remaining}}s",
   "execution.clickedAt": "Clicked at: [{{coords}}]",
   "execution.screenshotAlt": "Latest screenshot",
   "execution.screenshotPlaceholder": "Screenshots will appear here during execution",

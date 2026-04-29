@@ -71,7 +71,7 @@ class WebSocketProgressCallback:
         run = self.app_state.current_run
         return run is not None and run.cancel_event.is_set()
 
-    def on_step_start(self, step_num: int, label: str):
+    def on_step_start(self, step_num: int, step: Step):
         if self.app_state.current_run:
             self.app_state.current_run.current_step = step_num
 
@@ -80,14 +80,17 @@ class WebSocketProgressCallback:
             "run_id": self.run_id,
             "step_num": step_num,
             "total_steps": self.total_steps,
-            "label": label,
+            "label": step.description or step.action,
+            "action": step.action,
+            "wait_seconds": step.wait_seconds,
         })
 
     def on_step_complete(self, step_num: int, result):
-        screenshot_b64 = None
-        if result.screenshot_path and os.path.exists(result.screenshot_path):
-            with open(result.screenshot_path, "rb") as f:
-                screenshot_b64 = base64.b64encode(f.read()).decode()
+        def _b64(path):
+            if not path or not os.path.exists(path):
+                return None
+            with open(path, "rb") as f:
+                return base64.b64encode(f.read()).decode()
 
         step_data = {
             "step_num": step_num,
@@ -97,7 +100,9 @@ class WebSocketProgressCallback:
             "duration_seconds": round(result.duration_seconds, 2),
             "error": result.error,
             "coordinates": list(result.coordinates) if result.coordinates else None,
-            "screenshot_base64": screenshot_b64,
+            "screenshot_base64": _b64(result.screenshot_path),
+            "actual_screenshot_base64": _b64(result.actual_screenshot_path),
+            "baseline_screenshot_base64": _b64(result.baseline_screenshot_path),
         }
 
         if self.app_state.current_run:

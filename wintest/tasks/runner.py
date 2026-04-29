@@ -95,7 +95,7 @@ class TestRunner:
             logger.info("[Step %d/%d] %s...", i, total, label)
 
             if progress_callback:
-                progress_callback.on_step_start(i, label)
+                progress_callback.on_step_start(i, step)
 
             # Resolve variable placeholders before execution
             step = variables.resolve_step(step)
