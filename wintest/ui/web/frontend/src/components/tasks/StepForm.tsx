@@ -65,14 +65,17 @@ const FIELD_RENDERERS: Record<string, FieldRenderer> = {
     />
   ),
   wait_seconds: (step, _field, update, t) => (
-    <input
-      className="input"
-      type="number"
-      step="0.5"
-      placeholder={t('stepForm.waitPlaceholder')}
-      value={step.wait_seconds}
-      onChange={e => update('wait_seconds', parseFloat(e.target.value) || 0)}
-    />
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+      <input
+        className="input"
+        type="number"
+        step="0.5"
+        placeholder={t('stepForm.waitPlaceholder')}
+        value={step.wait_seconds}
+        onChange={e => update('wait_seconds', parseFloat(e.target.value) || 0)}
+      />
+      <span className="text-muted">{t('stepForm.seconds')}</span>
+    </span>
   ),
   app_path: (step, _field, update, t) => (
     <AppPathInput

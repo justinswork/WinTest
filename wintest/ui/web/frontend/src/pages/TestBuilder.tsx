@@ -306,7 +306,6 @@ export function TestBuilder() {
       setSteps(prev => [...prev, builderStep]);
       setRegionMode(false);
       setRegionRect(null);
-      setAction('click');
       setDescription('');
       showToast(t('builder.baselineSaved'));
     } catch {
@@ -378,9 +377,7 @@ export function TestBuilder() {
     setSteps(prev => [...prev, pendingStep.step]);
     setSelectedStep(null);
     setPendingStep(null);
-    // Reset for next step
-    setAction('click');
-    setClickType('click');
+    // Clear input fields for the next step but keep the user's chosen action.
     setTarget('');
     setText('');
     setKey('');
@@ -461,9 +458,7 @@ export function TestBuilder() {
       } catch { /* ignore */ }
     }
 
-    // Reset for next step
-    setAction('click');
-    setClickType('click');
+    // Clear input fields for the next step but keep the user's chosen action.
     setTarget('');
     setText('');
     setKey('');
@@ -514,8 +509,7 @@ export function TestBuilder() {
           setScreenshot(result.screenshot_base64);
         }
 
-        // Reset for next step
-        setAction('click');
+        // Clear input fields but keep the user's chosen action.
         setTarget('');
         setText('');
         setKey('');
@@ -523,12 +517,12 @@ export function TestBuilder() {
         setAppPath('');
         setAppTitle('');
         setDescription('');
-    setVariableName('');
-    setVariableValue('');
-    setLoopTarget(1);
-    setRepeatCount(1);
-    setFilePath('');
-    setCompareMode('exact');
+        setVariableName('');
+        setVariableValue('');
+        setLoopTarget(1);
+        setRepeatCount(1);
+        setFilePath('');
+        setCompareMode('exact');
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Step failed';
@@ -749,15 +743,18 @@ export function TestBuilder() {
         );
       case 'wait':
         return (
-          <input
-            className="input"
-            type="number"
-            step="0.5"
-            value={waitSeconds}
-            onChange={e => setWaitSeconds(parseFloat(e.target.value) || 0)}
-            style={{ width: 100 }}
-            disabled={executing}
-          />
+          <>
+            <input
+              className="input"
+              type="number"
+              step="0.5"
+              value={waitSeconds}
+              onChange={e => setWaitSeconds(parseFloat(e.target.value) || 0)}
+              style={{ width: 100 }}
+              disabled={executing}
+            />
+            <span className="text-muted">{t('builder.seconds')}</span>
+          </>
         );
       case 'launch_application':
         return (
