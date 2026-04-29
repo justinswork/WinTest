@@ -79,6 +79,7 @@ class ApplicationManager:
         self.launch_timeout = launch_timeout
         self._process: Optional[subprocess.Popen] = None
         self._gui_pid: Optional[int] = None
+        self._launched_via_shell: bool = False
         self._user32 = ctypes.windll.user32
 
     @property
@@ -98,17 +99,34 @@ class ApplicationManager:
         """Launch the application and verify it actually started.
 
         Raises:
-            RuntimeError: the cmd wrapper exited with an error (e.g. path not
-                found), or the configured app_title window did not appear
-                within launch_timeout.
+            FileNotFoundError: app_path is an absolute path but the file
+                does not exist on disk.
+            RuntimeError: the cmd wrapper exited with an error, or the
+                configured app_title window did not appear within
+                launch_timeout.
         """
+        if os.path.isabs(self.config.path) and not os.path.isfile(self.config.path):
+            raise FileNotFoundError(
+                f"Application not found: {self.config.path}"
+            )
+
         if kill_existing and self.config.title and self.find_window_handle():
             logger.info("Closing existing '%s' windows...", self.config.title)
             self._close_matching_windows()
             time.sleep(1)
 
-        logger.info("Launching: %s", self.config.path)
-        self._process = subprocess.Popen(self.config.path, shell=True)
+        # For direct .exe paths we spawn without a shell so Popen.pid is the
+        # actual GUI process — that lets us verify launch by polling the
+        # process even when no app_title is configured. For other paths (.bat,
+        # PATH-resolved names, .lnk shortcuts) we fall back to shell=True.
+        path = self.config.path
+        use_shell = not (os.path.isfile(path) and path.lower().endswith(('.exe', '.com')))
+        logger.info("Launching: %s", path)
+        self._process = subprocess.Popen(
+            path if use_shell else [path],
+            shell=use_shell,
+        )
+        self._launched_via_shell = use_shell
         logger.info(
             "Waiting %.1fs for application to start (PID %d)...",
             self.config.wait_after_launch,
@@ -119,22 +137,34 @@ class ApplicationManager:
         self._verify_launched()
 
     def _verify_launched(self) -> None:
-        """Confirm the launched app's process and (optionally) window are alive.
+        """Confirm the launched app's process is alive (and optionally that
+        its window appeared).
 
-        With shell=True the subprocess pid is the cmd.exe wrapper, which exits
-        as soon as it has finished spawning the GUI app. A non-zero returncode
-        means cmd hit an error (e.g. path not found). Returncode 0 means cmd
-        dispatched something successfully — but cmd exits 0 for `start "" badpath`-style
-        invocations too, so we additionally poll for a window matching app_title
-        when one is configured.
+        When spawned without a shell (direct .exe path), Popen.pid is the GUI
+        process itself: a non-None poll() means it exited during startup,
+        which counts as a failed launch regardless of the exit code. When
+        spawned via the shell, Popen.pid is the cmd wrapper which exits as
+        soon as it has dispatched the GUI; only a non-zero exit signals a
+        real failure (e.g. path not recognized).
+
+        If app_title is configured we additionally poll for a matching
+        window — this catches the case where the .exe started but silently
+        terminated before opening any window.
         """
         if self._process is not None:
             rc = self._process.poll()
-            if rc is not None and rc != 0:
-                raise RuntimeError(
-                    f"Failed to launch '{self.config.path}': "
-                    f"shell exited with code {rc}"
-                )
+            if self._launched_via_shell:
+                if rc is not None and rc != 0:
+                    raise RuntimeError(
+                        f"Failed to launch '{self.config.path}': "
+                        f"shell exited with code {rc}"
+                    )
+            else:
+                if rc is not None:
+                    raise RuntimeError(
+                        f"Failed to launch '{self.config.path}': "
+                        f"process exited with code {rc} during startup"
+                    )
 
         if not self.config.title:
             return
