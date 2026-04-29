@@ -974,15 +974,35 @@ export function TestBuilder() {
             const secondaryLabel = interactive ? t('builder.addOnly') : t('builder.addAndRun');
             const secondaryIcon = interactive ? <Plus size={14} /> : <Play size={14} />;
 
+            // Gate the Add buttons on the form having the required input for
+            // this action. Avoids triggering AI model loads for empty steps.
+            const formReady = (() => {
+              switch (action) {
+                case 'click': return target.trim().length > 0;
+                case 'verify': return target.trim().length > 0;
+                case 'type': return text.length > 0;
+                case 'press_key': return key.trim().length > 0;
+                case 'hotkey': return keys.trim().length > 0;
+                case 'launch_application': return appPath.trim().length > 0;
+                case 'set_variable': return variableName.trim().length > 0;
+                case 'compare_saved_file': return filePath.trim().length > 0;
+                case 'scroll': return scrollAmount !== 0;
+                case 'wait': return waitSeconds > 0;
+                case 'loop': return loopTarget >= 1 && repeatCount >= 1;
+                default: return true;
+              }
+            })();
+            const buttonsDisabled = executing || !formReady;
+
             return (
               <div className="builder-run-split" ref={runMenuRef}>
-                <button className="btn btn-primary" onClick={primaryAction} disabled={executing}>
+                <button className="btn btn-primary" onClick={primaryAction} disabled={buttonsDisabled}>
                   {primaryIcon}{primaryLabel}
                 </button>
                 <button
                   className="btn btn-primary builder-run-toggle"
                   onClick={() => setShowRunMenu(!showRunMenu)}
-                  disabled={executing}
+                  disabled={buttonsDisabled}
                 >
                   <ChevronDown size={14} />
                 </button>
