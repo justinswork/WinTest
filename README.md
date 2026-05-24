@@ -10,8 +10,6 @@ Think of it as Selenium/Playwright, but for **any desktop application**.
 
 ![wintest overview — recording, replaying, and reporting on a Windows app](docs/images/WinTestOverview.gif)
 
-![wintest dashboard — today's scheduled pipelines and recent test results](docs/images/dashboard.png)
-
 ---
 
 ## What you can do
